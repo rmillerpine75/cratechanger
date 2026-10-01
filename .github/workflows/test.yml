@@ -5,17 +5,20 @@ on:
   workflow_dispatch:
 jobs:
   test:
-    runs-on: ubuntu-latest
+    # pinned (not ubuntu-latest) so an OS switch can't silently change the Chrome the tests run on
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
       - name: Build
         run: node build.mjs
       - name: Committed dist/ matches the sources
         run: git diff --exit-code -- dist/
+      - name: Static checks
+        run: node tests/static-check.mjs
       - name: Test (headless Chrome)
         run: node tests/run.mjs
         env:
