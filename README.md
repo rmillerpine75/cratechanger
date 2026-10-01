@@ -2,8 +2,10 @@
 
 A single-file web app for managing a 200-disc CD changer: covers, tracklists, flags, loans, play history, stats.
 
-**To use it:** open `dist/cratechanger.html` in Chrome or Edge. No server, no install.
+**To use it:** open https://rmillerpine75.github.io/cratechanger/ or open `dist/cratechanger.html` straight from disk, in Chrome or Edge.
 Your collection lives in that browser's local storage. Use **💾 BACKUP** (export or auto-backup) to keep a copy.
+The website and the local file keep **separate** collections (different storage); move data between them with BACKUP → EXPORT JSON / IMPORT JSON.
+Every push to `main` re-publishes the site, but only after all tests pass.
 
 ## Layout
 
