@@ -952,6 +952,223 @@
     window.fetch = baseFetch;
 
     }
+    {   // ═══ 14. ROUND-5 ═══
+      const resetAll5 = async () => {
+        discs = INITIAL_DATA.map(normalizeDisc); while (discs.length < 200) discs.push(null);
+        meta = {}; mbCache = {}; artistCache = {}; valueCache = {}; await clearCustomArt(); nowPlaying = null; mbMode = 'ok';
+        $('searchInput').value = ''; ['artistFilter', 'flagFilter', 'genreFilter', 'decadeFilter', 'originFilter'].forEach(id => { $(id).value = ''; });
+        $('sortSelect').value = 'slot'; clearUndoHistory(); spellSuggestions = []; dcSkipped = new Set();
+        buildGrid();
+      };
+      await resetAll5();
+      const base5 = window.fetch;
+      let spellOn = false;
+      window.fetch = (url, o) => {
+        const u = String(url); const du = decodeURIComponent(u);
+        if (du.includes('query=barcode:')) { calls.push(u); return reply(du.includes('barcode:0000000000') ? { releases: [] } : { releases: [{ id: 'rel-bc', score: 100, title: 'Barcode Album', date: '2003-03-03', country: 'NO', 'artist-credit': [{ name: 'Bc Band', joinphrase: '' }], media: [{ format: 'CD' }] }] }); }
+        if (u.includes('/release/rel-bc?')) { calls.push(u); return reply({ 'release-group': { id: 'rg-bc', 'primary-type': 'Album', 'first-release-date': '2003-03-03' }, 'artist-credit': [{ name: 'Bc Band', artist: { id: 'art-bc', name: 'Bc Band' } }], date: '2003-03-03', country: 'NO', media: [{ tracks: [{ position: 1, title: 'Scanned Track', length: 60000 }] }] }); }
+        if (u.includes('inc=url-rels')) { calls.push(u); return reply(u.includes('/release/rel-9') ? { relations: [] } : { relations: [{ type: 'discogs', url: { resource: 'https://www.discogs.com/release/777' } }] }); }
+        if (u.includes('api.discogs.com/marketplace/stats/777')) { calls.push(u); return reply({ num_for_sale: 4, lowest_price: { value: 12.5, currency: 'USD' } }); }
+        // REAL SHAPE (verified live): the release is a split CD, listed under the artist, spelt "Fraility"
+        if (spellOn && du.includes('query=artist:"Malignancy"')) { calls.push(u); return reply({ releases: [
+          { id: 'rel-sp', score: 100, title: 'Unexpected Awakening of Impassive Mass / Fraility of the Human Condition', 'artist-credit': [{ name: 'Malignancy', joinphrase: ' / ', artist: { name: 'Malignancy' } }, { name: 'Intervalle Bizzare', artist: { name: 'Intervalle Bizzare' } }] },
+          { id: 'rel-sp2', score: 100, title: 'Intrauterine Cannibalism', 'artist-credit': credit('Malignancy') },
+          { id: 'rel-x', score: 90, title: 'Human Condition', 'artist-credit': credit('Someone Else') }] }); }
+        return base5(url, o);
+      };
+      const blurAll = () => { const a = document.activeElement; if (a && a.blur) a.blur(); };
+      const key = (k, extra) => document.dispatchEvent(new KeyboardEvent('keydown', Object.assign({ key: k, bubbles: true, cancelable: true }, extra || {})));
+
+      // ── multi-level UNDO / REDO ──
+      const s0 = JSON.stringify(discs);
+      swapSlots(0, 1); const s1 = JSON.stringify(discs);
+      openEditModal(null, 2); $('editAlbum').value = 'Undo Test Album'; await saveEdit(); const s2 = JSON.stringify(discs);
+      multiSelect = true; selectedSlots = new Set([3]); batchFlag('replace'); multiSelect = false; selectedSlots = new Set();
+      ok('undo history keeps several steps', undoStack.length === 3 && $('undoText').textContent.includes('3 STEPS'), $('undoText').textContent);
+      await performUndo(); ok('undo #1 reverts only the last action (batch flag)', !getMeta(3).flags.includes('replace') && JSON.stringify(discs) === s2);
+      await performUndo(); ok('undo #2 reverts the edit', JSON.stringify(discs) === s1);
+      await performUndo(); ok('undo #3 reverts the swap', JSON.stringify(discs) === s0);
+      ok('then three steps are available to redo', undoStack.length === 0 && redoStack.length === 3 && $('redoBtn').style.display !== 'none');
+      blurAll(); key('z', { ctrlKey: true, shiftKey: true }); await wait(250);
+      ok('Ctrl+Shift+Z redoes', JSON.stringify(discs) === s1);
+      key('y', { ctrlKey: true }); await wait(250);
+      ok('Ctrl+Y redoes too', JSON.stringify(discs) === s2);
+      swapSlots(10, 11);
+      ok('a new action clears the redo history', redoStack.length === 0 && undoStack.length === 3);
+      dismissUndo(); blurAll(); key('z', { ctrlKey: true }); await wait(250);
+      ok('Ctrl+Z still works after the bar was dismissed', JSON.stringify(discs) === s2);
+      for (let k = 0; k < 30; k++) swapSlots(20, 21);
+      ok('history is capped at 25 steps', undoStack.length === 25, undoStack.length);
+      clearUndoHistory();
+
+      // ── DATE ADDED ──
+      await resetAll5();
+      const emptyI = discs.findIndex((d, i) => isSlotEmpty(d) && !isWish(i));
+      openEditModal(null, emptyI); $('editArtist').value = 'New Band'; $('editAlbum').value = 'First Album'; await saveEdit();
+      const added1 = getMeta(emptyI).addedAt;
+      ok('putting a disc into an empty slot records the date added', !!added1 && Date.now() - Date.parse(added1) < 60000);
+      openEditModal(null, emptyI); $('editAlbum').value = 'First Album (Remaster)'; await saveEdit();
+      ok('renaming keeps the original added date', getMeta(emptyI).addedAt === added1);
+      getMeta(5).addedAt = '2025-01-15T10:00:00.000Z'; getMeta(6).addedAt = '2026-03-01T10:00:00.000Z';
+      $('sortSelect').value = 'added'; applyFilters();
+      const oA = Array.from($('grid').children).slice(0, 3).map(e => +e.dataset.index).join();
+      ok('sort: recently added', oA === [emptyI, 6, 5].join(), oA);
+      $('sortSelect').value = 'slot'; applyFilters();
+      openInfoModal(6); await wait(150);
+      ok('disc view shows when it was added', $('playHistoryRow').textContent.includes('ADDED 2026-03-01'), $('playHistoryRow').textContent);
+      closeModal();
+      openStats();
+      ok('stats: 12-month collection growth chart', $('statsContent').textContent.includes('COLLECTION GROWTH') && document.querySelectorAll('#statsContent .gr-col').length === 12 && $('statsContent').textContent.includes('3 OF'));
+      closeStats();
+
+      // ── METAL ARCHIVES ──
+      opened.length = 0; openInfoModal(idxOf('Absu', 'Tara')); await wait(150); $('maBtn').click();
+      ok('M-A opens the Encyclopaedia Metallum band search', opened[0] === 'https://www.metal-archives.com/search?searchString=Absu&type=band_name', opened[0]);
+      ok('M-A searches the first artist of a split', metalArchivesUrl("Dimmu Borgir / Old Man's Child").includes('searchString=Dimmu%20Borgir&'));
+      closeModal();
+
+      // ── DATA CHECK ──
+      await resetAll5();
+      discs[12] = [discs[12][0] + '  ', discs[12][1]];
+      const cof = discs.map((d, i) => i).filter(i => discs[i] && discs[i][0] === 'Cradle Of Filth');
+      discs[cof[1]] = ['Cradle of Filth', discs[cof[1]][1]];
+      const cofAlbum = discs[cof[1]][1];
+      mbCache['Cradle of Filth|' + cofAlbum] = { mbTried: true, v: 2, tracks: [{ num: 1, title: 'kept' }], tags: [], artSources: [] };
+      buildGrid();
+      openDataCheck();
+      const dcText = () => $('dataCheckList').textContent;
+      const fix = async (kind, contains) => {
+        const it = Array.from(document.querySelectorAll('#dataCheckList .dc-item')).find(x => x.querySelector('.dc-kind').textContent === kind && (!contains || x.textContent.includes(contains)));
+        if (!it) return false; it.querySelector('[data-dc-apply]').click(); await wait(200); return true;
+      };
+      ok('data check: stray spaces', dcText().includes('EXTRA SPACES'));
+      ok('data check: artist spelling variants', dcText().includes('ARTIST SPELT DIFFERENTLY') && dcText().includes('“Cradle of Filth” (1)'));
+      ok('data check: the duplicate rows', dcText().includes('DUPLICATE') && dcText().includes('Crucible Of The Infernum') && dcText().includes('Signs Of Life'));
+      ok('data check: discs out of A–Z order, and where the second list starts', /\d+ disc\(s\) are out of A–Z artist order — a new A–Z list starts at slot 102\b/.test(dcText()), (dcText().match(/\d+ disc\(s\) are out of A–Z[^.]*/) || [''])[0]);
+      await fix('EXTRA SPACES');
+      ok('TRIM fixes the spaces and is undoable', discs[12][0] === discs[12][0].trim() && $('undoText').textContent.includes('DATA CHECK'));
+      await fix('ARTIST SPELT DIFFERENTLY');
+      ok('artist spelling made consistent', discs[cof[1]][0] === 'Cradle Of Filth');
+      ok('...and the existing lookup is kept (no re-fetch)', !!mbCache['Cradle Of Filth|' + cofAlbum] && mbCache['Cradle Of Filth|' + cofAlbum].tracks[0].title === 'kept' && !mbCache['Cradle of Filth|' + cofAlbum]);
+      await fix('DUPLICATE', 'Crucible');
+      const dupSlots = discs.map((d, i) => i).filter(i => discs[i] && discs[i][1] === 'Crucible Of The Infernum');
+      ok('FLAG AS DUPLICATE flags only the second copy', dupSlots.length === 2 && !getMeta(dupSlots[0]).flags.includes('duplicate') && getMeta(dupSlots[1]).flags.includes('duplicate'));
+      const nItems = document.querySelectorAll('#dataCheckList .dc-item').length;
+      document.querySelector('#dataCheckList [data-dc-skip]').click();
+      ok('SKIP hides a suggestion', document.querySelectorAll('#dataCheckList .dc-item').length === nItems - 1);
+      await performUndo(); renderDataCheck();
+      ok('UNDO brings a fixed issue back', discs.some(d => d && d[1] === 'Crucible Of The Infernum') && dupSlots.every(i => !getMeta(i).flags.includes('duplicate')));
+      await fix('ORDER');
+      ok('ORDER opens the re-sort plan', $('resortModal').classList.contains('open') && !$('dataCheckModal').classList.contains('open'));
+      closeResort();
+      await resetAll5();
+      const mi = idxOf('Malignancy', 'Frality Of The Human Condition');
+      mbCache[keyOf(discs[mi])] = { mbTried: true, v: 2, tracks: [], tags: [], artSources: [] };
+      spellOn = true; openDataCheck(); await checkSpellingOnline();
+      ok('online spelling check finds the real release (half of a split CD)', dcText().includes('POSSIBLE TYPO') && dcText().includes('Unexpected Awakening of Impassive Mass / Fraility of the Human Condition') && $('dcSpellStatus').textContent.includes('1 SUGGESTION'), $('dcSpellStatus').textContent);
+      ok('...and ignores other bands with similar titles', !dcText().includes('“Human Condition”'));
+      await fix('POSSIBLE TYPO'); await wait(400);
+      ok('accepting it renames the disc and looks it up again', discs[mi][1] === 'Unexpected Awakening of Impassive Mass / Fraility of the Human Condition' && !mbCache['Malignancy|Frality Of The Human Condition'] && !!mbCache['Malignancy|Unexpected Awakening of Impassive Mass / Fraility of the Human Condition']);
+      spellOn = false; closeDataCheck();
+      ok('similarity scoring', similarity('frality of the human condition', 'frailty of the human condition') > 0.9 && similarity('abc', 'xyz') < 0.1);
+
+      // ── COMPACT TOOLBAR ──
+      ok('secondary actions moved into ☰ MORE', !!$('moreMenu').querySelector('#themeBtn') && /TIMELINE/.test($('moreMenu').textContent) && /HEATMAP/.test($('moreMenu').textContent) && /DATA CHECK/.test($('moreMenu').textContent) && document.querySelectorAll('.header-right > .btn').length <= 6, document.querySelectorAll('.header-right > .btn').length + ' header buttons');
+      ok('MORE starts closed', !$('moreMenu').classList.contains('open'));
+      $('moreBtn').click();
+      ok('☰ MORE opens the menu', $('moreMenu').classList.contains('open') && $('moreBtn').getAttribute('aria-expanded') === 'true');
+      document.body.click();
+      ok('clicking elsewhere closes it', !$('moreMenu').classList.contains('open'));
+      $('moreBtn').click(); key('Escape');
+      ok('Esc closes it', !$('moreMenu').classList.contains('open'));
+      $('moreBtn').click();
+      Array.from($('moreMenu').querySelectorAll('button')).find(b => /TIMELINE/.test(b.textContent)).click();
+      ok('choosing an item runs it and closes the menu', $('timelineModal').classList.contains('open') && !$('moreMenu').classList.contains('open'));
+      closeTimeline();
+      ok('filters start collapsed', getComputedStyle($('filterPanel')).display === 'none');
+      toggleFilterPanel();
+      ok('⚲ FILTERS opens the panel', getComputedStyle($('filterPanel')).display !== 'none' && $('filterToggleBtn').getAttribute('aria-expanded') === 'true');
+      $('flagFilter').value = 'broken'; applyFilters();
+      ok('the FILTERS button shows how many filters are active', $('filterToggleBtn').textContent.includes('(1)') && $('filterToggleBtn').classList.contains('active'));
+      clearAllFilters();
+      ok('...and resets when cleared', $('filterToggleBtn').textContent.trim() === '⚲ FILTERS' && !$('filterToggleBtn').classList.contains('active'));
+      toggleFilterPanel();
+
+      // ── BARCODE ──
+      await resetAll5();
+      const bI = discs.findIndex((d, i) => isSlotEmpty(d) && !isWish(i));
+      openEditModal(null, bI);
+      $('editBarcode').value = '12'; await lookupBarcode();
+      ok('a too-short barcode is rejected', $('toast').textContent.includes('8 TO 14 DIGITS'));
+      $('editBarcode').value = '0000000000000'; await lookupBarcode();
+      ok('an unknown barcode is explained', $('barcodeResults').textContent.includes('No release with that barcode'));
+      $('editBarcode').value = '3760053840156'; await lookupBarcode();
+      const bRows = document.querySelectorAll('#barcodeResults .edition-row');
+      ok('barcode lookup lists the release', bRows.length === 1 && bRows[0].textContent.includes('Bc Band — Barcode Album') && bRows[0].textContent.includes('NO'));
+      bRows[0].click();
+      ok('choosing it fills artist + album', $('editArtist').value === 'Bc Band' && $('editAlbum').value === 'Barcode Album' && pendingPin === 'rel-bc');
+      await saveEdit(); await wait(500);
+      const bc = mbCache['Bc Band|Barcode Album'];
+      ok('saving pins that exact edition and keeps the barcode', getMeta(bI).barcode === '3760053840156' && !!bc && bc.mbid === 'rel-bc' && bc.pinned === true && bc.tracks[0].title === 'Scanned Track');
+      ok('camera SCAN button only where the browser can scan barcodes', ('BarcodeDetector' in window) ? $('scanBtn').style.display !== 'none' : $('scanBtn').style.display === 'none');
+      openEditModal(null, bI);
+      ok('the edit dialog shows the stored barcode', $('editBarcode').value === '3760053840156' && pendingPin === null && $('barcodeResults').innerHTML === '');
+      closeEditModal();
+
+      // ── DISCOGS CSV IMPORT ──
+      await resetAll5();
+      const tI5 = idxOf('Absu', 'Tara');
+      getMeta(tI5).flags = ['wishlist'];
+      const emptyIdx0 = discs.findIndex((d, i) => isSlotEmpty(d) && !isWish(i));
+      const csv = 'Catalog#,Artist,Title,Label,Format,Rating,Released,release_id,CollectionFolder,Date Added,Collection Media Condition,Collection Sleeve Condition,Collection Notes\n' +
+        'OPCD 100,Absu,Tara,Osmose Productions,CD,,2001,111,Uncategorized,2024-05-06 10:11:12,Near Mint (NM or M-),,\n' +
+        'X1,"Brand New (2)",Debut Album,Lbl,CD,,2020,222,Uncategorized,2025-07-08 09:00:00,Very Good Plus (VG+),,"note with, comma\nand newline"\n' +
+        'X2,Other Band*,"Second, Album",Lbl,CD,,2021,333,Uncategorized,2025-08-01 09:00:00,Good (G),,\n';
+      confirms.length = 0;
+      await importDiscogsCsv({ target: { files: [new File([csv], 'collection.csv')], value: '' } });
+      const dryD = confirms[0] || '';
+      ok('Discogs import: dry run first', dryD.startsWith('DISCOGS IMPORT') && dryD.includes('3 release(s)') && dryD.includes('1 already in your collection') && dryD.includes('1 leave your wishlist') && dryD.includes('2 new → 1 into empty slots, 1 as new slots'), dryD.split('\n').slice(1, 4).join(' | '));
+      ok('matched disc: Discogs link + date added; leaves the wishlist (you own it now)', getMeta(tI5).discogsId === 111 && String(getMeta(tI5).addedAt).startsWith('2024-05-06') && !isWish(tI5));
+      const nb = idxOf('Brand New', 'Debut Album'), ob = idxOf('Other Band', 'Second, Album');
+      ok('Discogs "(2)" and "*" artist suffixes are cleaned', nb >= 0 && ob >= 0, nb + ',' + ob);
+      ok('new discs fill the empty slot first, then become a new slot', discs.length === 201 && [nb, ob].includes(emptyIdx0) && [nb, ob].includes(200));
+      ok('condition, notes, date and Discogs link come across', getMeta(nb).condition === 'good' && getMeta(nb).notes === 'note with, comma\nand newline' && getMeta(ob).condition === 'scratched' && String(getMeta(nb).addedAt).startsWith('2025-07-08') && getMeta(nb).discogsId === 222);
+      ok('Discogs import is undoable', $('undoText').textContent.includes('DISCOGS IMPORT'));
+      await performUndo();
+      ok('UNDO removes the imported discs and links', discs.length === 200 && idxOf('Brand New', 'Debut Album') < 0 && !getMeta(tI5).discogsId && isWish(tI5));
+      alerts.length = 0;
+      await importDiscogsCsv({ target: { files: [new File(['foo,bar\n1,2'], 'x.csv')], value: '' } });
+      ok('a non-Discogs CSV is rejected with a message', alerts.some(a => a.includes('not a Discogs collection export')));
+      ok('CSV parser: quotes, commas, newlines, BOM', JSON.stringify(parseCsv('\uFEFFa,"b,c","d""e"\n1,"x\ny",3')) === JSON.stringify([['a', 'b,c', 'd"e'], ['1', 'x\ny', '3']]));
+      ok('Discogs condition grades map to the app\'s', mapDiscogsCondition('Mint (M)') === 'mint' && mapDiscogsCondition('Near Mint (NM or M-)') === 'mint' && mapDiscogsCondition('Very Good Plus (VG+)') === 'good' && mapDiscogsCondition('Good Plus (G+)') === 'scratched' && mapDiscogsCondition('Poor (P)') === 'scratched' && mapDiscogsCondition('') === '');
+
+      // ── DISCOGS VALUES ──
+      await resetAll5();
+      DG_SPACING = 0;
+      const vT = idxOf('Absu', 'Tara'), vS = idxOf('Absu', 'The Sun of Tiphareth');
+      discs = discs.map((d, i) => (i === vT || i === vS) ? d : null);
+      mbCache['Absu|Tara'] = { mbid: 'rel-1', mbTried: true, v: 2, tracks: [{ num: 1, title: 't' }], tags: [], artSources: [] };
+      mbCache['Absu|The Sun of Tiphareth'] = { mbid: 'rel-9', mbTried: true, v: 2, tracks: [{ num: 1, title: 't' }], tags: [], artSources: [] };
+      buildGrid(); confirms.length = 0;
+      await estimateValues();
+      ok('value lookup asks first, with a time estimate', confirms.some(c => c.includes('Discogs prices for 2 disc(s)') && /minute/.test(c)));
+      ok('Discogs release found through MusicBrainz, then priced', !!valueCache['Absu|Tara'] && valueCache['Absu|Tara'].discogsId === 777 && valueCache['Absu|Tara'].lowest === 12.5 && valueCache['Absu|Tara'].forSale === 4);
+      ok('a disc with no Discogs link is remembered as such', !!valueCache['Absu|The Sun of Tiphareth'] && valueCache['Absu|The Sun of Tiphareth'].discogsId === null);
+      const nUrl = calls.filter(c => c.includes('inc=url-rels')).length;
+      openStats();
+      const stV = $('statsContent').textContent;
+      ok('stats: estimated total + most valuable + honest caveats', stV.includes('ESTIMATED VALUE') && /12\.50/.test(stV) && stV.includes('1 WITH NO LISTING') && stV.includes('NOT A GUARANTEED VALUE'), (stV.match(/ESTIMATED VALUE.{0,80}/) || [''])[0]);
+      closeStats();
+      openInfoModal(vT); await wait(200);
+      ok('disc view shows the price', $('modalValue').textContent.includes('12.50') && $('modalValue').textContent.includes('4 FOR SALE'), $('modalValue').textContent);
+      opened.length = 0; $('discogsBtn').click();
+      ok('DISCOGS opens the exact release once it is known', opened[0] === 'https://www.discogs.com/release/777', opened[0]);
+      closeModal();
+      confirms.length = 0; await estimateValues();
+      ok('prices are reused for 30 days (no repeat lookups)', confirms.length === 0 && $('toast').textContent.includes('LESS THAN 30 DAYS') && calls.filter(c => c.includes('inc=url-rels')).length === nUrl);
+      DG_SPACING = 2600;
+      window.fetch = base5;
+    }
   } catch (e) {
     R.push('FAIL harness exception: ' + (e && e.stack || e));
   }

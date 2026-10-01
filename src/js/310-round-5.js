@@ -84,11 +84,24 @@ function collectDataIssues(){
     const d=discs[s.slot];if(!d||d[0]!==s.artist||d[1]!==s.from)return;
     issues.push({id:'spell:'+s.slot+':'+s.to,title:'POSSIBLE TYPO',text:`${slotNum(s.slot)}  “${s.from}”  →  “${s.to}”  (closest MusicBrainz title, ${Math.round(s.sim*100)}% similar)`,label:'RENAME',apply:()=>{renameSlot(s.slot,d[0],s.to,false);spellSuggestions=spellSuggestions.filter(x=>x!==s);return [s.slot]}});
   });
-  // 5. order: several separate A–Z runs (e.g. one list appended after another)
+  // 5. order: how many discs sit out of A–Z artist order (= discs NOT in the longest already-sorted sequence),
+  //    and where a second A–Z list restarts (e.g. one list appended after another)
   const seq=owned.filter(i=>!isWish(i));
-  let runs=seq.length?1:0;
-  for(let k=1;k<seq.length;k++)if(sortName(discs[seq[k-1]][0]).localeCompare(sortName(discs[seq[k]][0]),undefined,{sensitivity:'base'})>0)runs++;
-  if(runs>1&&runs<=6)issues.push({id:'order:'+runs,title:'ORDER',text:`Your slots form ${runs} separate A–Z runs (one list appended after another).`,label:'OPEN RE-SORT PLAN',navigate:true,apply:()=>{closeDataCheck();openResort()}});
+  if(seq.length>2){
+    const cmpA=(a,b)=>sortName(discs[a][0]).localeCompare(sortName(discs[b][0]),undefined,{sensitivity:'base'});
+    const ranked=seq.slice().sort(cmpA);
+    const rank=new Map();let r=0;
+    ranked.forEach((i,k)=>{if(k&&cmpA(ranked[k-1],i)!==0)r++;rank.set(i,r)});
+    const tails=[];
+    seq.forEach(i=>{const v=rank.get(i);let lo=0,hi=tails.length;while(lo<hi){const mid=(lo+hi)>>1;if(tails[mid]<=v)lo=mid+1;else hi=mid}tails[lo]=v});
+    const outOfOrder=seq.length-tails.length;
+    const restarts=[];
+    for(let k=1;k<seq.length;k++){
+      const p=sortName(discs[seq[k-1]][0]).toUpperCase().charCodeAt(0),q=sortName(discs[seq[k]][0]).toUpperCase().charCodeAt(0);
+      if(p-q>=15)restarts.push(seq[k]);
+    }
+    if(outOfOrder>0)issues.push({id:'order:'+outOfOrder,title:'ORDER',text:`${outOfOrder} disc(s) are out of A–Z artist order${restarts.length?` — a new A–Z list starts at slot ${restarts.slice(0,2).map(slotNum).join(' and ')}`:''}.`,label:'OPEN RE-SORT PLAN',navigate:true,apply:()=>{closeDataCheck();openResort()}});
+  }
   return issues;
 }
 function openDataCheck(){closeBrModal();$('dataCheckModal').classList.add('open');renderDataCheck()}
@@ -117,7 +130,8 @@ $('dataCheckList').addEventListener('click',e=>{
   const a=e.target.closest('[data-dc-apply]');if(a){applyDataIssue(Number(a.dataset.dcApply));return}
   const s=e.target.closest('[data-dc-skip]');if(s){const x=(window._dcIssues||[])[Number(s.dataset.dcSkip)];if(x)dcSkipped.add(x.id);renderDataCheck()}
 });
-// For titles with no confident match: ask MusicBrainz for the closest real title by this artist.
+// For titles with no confident match: list everything MusicBrainz has BY THIS ARTIST and compare titles locally
+// (a plain title search drowns in other bands' albums). Split releases ("A / B") are compared part by part.
 async function checkSpellingOnline(){
   if(spellRunning)return;spellRunning=true;
   const btn=$('dcSpellBtn'),st=$('dcSpellStatus');btn.disabled=true;
@@ -128,6 +142,7 @@ async function checkSpellingOnline(){
     const e=mbCache[k];const ov=getOverride(i);
     return entryComplete(e)&&!e.skipped&&!(e.tracks&&e.tracks.length)&&!(ov&&ov.tracks&&ov.tracks.length);
   });
+  const byArtist=new Map();   // one MusicBrainz request per artist
   let found=0,failed=0;
   try{
     for(let n=0;n<cands.length;n++){
@@ -135,12 +150,15 @@ async function checkSpellingOnline(){
       st.textContent=`CHECKING ${n+1} OF ${cands.length}…`;
       const {clean}=parseAlbum(album);const a=artist.split('/')[0].trim();
       try{
-        const r=await mbFetchJson('https://musicbrainz.org/ws/2/release/?query='+encodeURIComponent(clean+' '+a)+'&fmt=json&limit=15');
-        const best=((r&&r.releases)||[])
-          .filter(x=>x&&x.title&&artistOk(a,(x['artist-credit']||[]).map(c=>(c.name||'')+' '+((c.artist&&c.artist.name)||'')).join(' ')))
-          .map(x=>({title:x.title,sim:similarity(normT(clean),normT(x.title))}))
-          .filter(x=>x.sim>=0.7&&normT(x.title)!==normT(clean))
-          .sort((p,q)=>q.sim-p.sim)[0];
+        if(!byArtist.has(a)){
+          const r=await mbFetchJson('https://musicbrainz.org/ws/2/release/?query='+encodeURIComponent('artist:"'+luceneEscape(a)+'"')+'&fmt=json&limit=100');
+          byArtist.set(a,((r&&r.releases)||[]).filter(x=>x&&x.title&&artistOk(a,(x['artist-credit']||[]).map(c=>(c.name||'')+' '+((c.artist&&c.artist.name)||'')).join(' '))).map(x=>x.title));
+        }
+        const target=normT(clean);
+        const titles=[...new Set(byArtist.get(a))];
+        const best=titles.map(t=>({title:t,sim:Math.max(similarity(target,normT(t)),...t.split(' / ').map(p=>similarity(target,normT(p))))}))
+          .filter(x=>x.sim>=0.7&&normT(x.title)!==target)
+          .sort((p,q)=>q.sim-p.sim||p.title.length-q.title.length)[0];
         if(best){
           const suffix=album.startsWith(clean)?album.slice(clean.length):'';
           spellSuggestions=spellSuggestions.filter(s=>s.slot!==i);

@@ -74,6 +74,9 @@ function openStats(){
     html.push(`<div class="stats-section"><h3>NEGLECTED (${neglected.length})</h3><div class="attn-hint">${neglected.length-never} NOT PLAYED IN OVER A YEAR · ${never} NEVER PLAYED · OLDEST FIRST</div>${rows}${neglected.length>12?`<div class="attn-hint">…and ${neglected.length-12} more</div>`:''}<button class="btn" style="margin-top:8px" type="button" data-pick-neglected="1">🎲 PICK A NEGLECTED DISC</button></div>`);
   }
 
+  html.push(valueSectionHtml());
+  html.push(growthSectionHtml());
+
   // Lookup health: titles that need a human
   const row=(i,why)=>`<div class="attn-row" data-edit-slot="${i}" title="Click to edit the title"><span class="attn-num">${String(i+1).padStart(3,'0')}</span><span class="attn-title">${escH(discs[i][0]||'?')} — ${escH(discs[i][1]||'?')}</span><span class="attn-meta">${why}</span></div>`;
   const attn=[...noMatch.map(i=>row(i,'NO CONFIDENT MATCH')),...skipped.map(i=>row(i,'PLACEHOLDER TITLE'))];

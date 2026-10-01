@@ -86,26 +86,35 @@ function followUpLookups(data,artist,album,i,token){
   }
 }
 
-// ── UNDO (single level, ~10 s) for edits, clears, swaps and batch flag changes ──
-let undoState=null,undoTimer=null;
+// ── UNDO / REDO HISTORY (last 25 actions): edits, clears, swaps, batch flags, editions, imports, re-sorts, data-check fixes ──
+const UNDO_MAX=25;
+let undoStack=[],redoStack=[],undoTimer=null;
 function snapshot(){
   return {discs:JSON.stringify(discs),meta:JSON.stringify(meta),np:JSON.stringify(nowPlaying),cache:JSON.stringify(mbCache),art:new Map(customArt)};
 }
-function offerUndo(label,snap){
-  undoState={label,snap};
-  $('undoText').textContent=label;
+function showUndoBar(){
+  const top=undoStack[undoStack.length-1];
+  if(!top&&!redoStack.length){dismissUndo();return}
+  $('undoText').textContent=top?top.label+(undoStack.length>1?`  ·  ${undoStack.length} STEPS`:''):'';
+  $('undoBtn').style.display=top?'':'none';
+  $('redoBtn').style.display=redoStack.length?'':'none';
   $('undoBar').classList.add('visible');
   clearTimeout(undoTimer);
   undoTimer=setTimeout(dismissUndo,10000);
 }
+function offerUndo(label,snap){
+  undoStack.push({label,snap});
+  if(undoStack.length>UNDO_MAX)undoStack.shift();
+  redoStack=[];
+  showUndoBar();
+}
+// hides the bar only; Ctrl+Z / Ctrl+Shift+Z keep working through the history
 function dismissUndo(){
-  clearTimeout(undoTimer);undoState=null;
+  clearTimeout(undoTimer);
   const b=$('undoBar');if(b)b.classList.remove('visible');
 }
-async function performUndo(){
-  if(!undoState)return;
-  const {label,snap}=undoState;
-  dismissUndo();
+function clearUndoHistory(){undoStack=[];redoStack=[];dismissUndo()}
+async function restoreSnapshot(snap){
   discs=JSON.parse(snap.discs);meta=JSON.parse(snap.meta);mbCache=JSON.parse(snap.cache);
   try{nowPlaying=JSON.parse(snap.np)}catch(e){nowPlaying=null}
   for(const k of [...customArt.keys()])if(!snap.art.has(k))await deleteCustomArt(k);
@@ -114,7 +123,20 @@ async function performUndo(){
   saveDiscs();saveMeta();saveMbCache();
   selectedSlots.clear();
   buildGrid();
-  toast('UNDONE: '+label);
+}
+async function performUndo(){
+  const step=undoStack.pop();if(!step)return;
+  redoStack.push({label:step.label,snap:snapshot()});
+  await restoreSnapshot(step.snap);
+  toast('UNDONE: '+step.label);
+  showUndoBar();
+}
+async function performRedo(){
+  const step=redoStack.pop();if(!step)return;
+  undoStack.push({label:step.label,snap:snapshot()});
+  await restoreSnapshot(step.snap);
+  toast('REDONE: '+step.label);
+  showUndoBar();
 }
 
 // ── MULTI-TAB SYNC: another tab (or another copy of this file) changed the shared storage ──
@@ -138,7 +160,7 @@ function syncFromStorage(){
   discs=loadDiscs();meta=loadMeta();
   try{nowPlaying=JSON.parse(safeGet(NP_KEY))}catch(e){nowPlaying=null}
   if(nowPlaying&&typeof nowPlaying.index!=='number')nowPlaying=null;
-  dismissUndo();   // an undo snapshot from before the other tab's change would silently revert it
+  clearUndoHistory();   // undo snapshots from before the other tab's change would silently revert it
   buildGrid();
   toast($('editModal').classList.contains('open')
     ?'⚠ ANOTHER TAB CHANGED THE COLLECTION — SAVING THIS EDIT WILL OVERWRITE THAT SLOT'

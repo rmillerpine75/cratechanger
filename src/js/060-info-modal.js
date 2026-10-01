@@ -46,6 +46,8 @@ function openInfoModal(i){
     pRow.innerHTML=`PLAYED <span>${ph.length}×</span> — LAST <span>${last}</span>`;
   } else pRow.innerHTML='NEVER PLAYED';
   renderNotesFor(i);
+  renderValueFor(i);
+  if(m.addedAt)pRow.insertAdjacentHTML('beforeend',' · ADDED <span>'+escH(String(m.addedAt).slice(0,10))+'</span>');
 
   $('loadingPulse').style.display='';
   $('infoModal').classList.add('open');
@@ -107,7 +109,9 @@ function renderModalData(data,artist,album,idx){
     currentMbUrl=data.mbUrl;
     const b=$('mbLinkBtn');b.style.display='';b.onclick=()=>window.open(data.mbUrl,'_blank','noopener');
   }
-  const dUrl=`https://www.discogs.com/search/?q=${encodeURIComponent(artist+' '+album)}&type=release`;
+  // exact Discogs release when known (Discogs import, or found during a value lookup); otherwise a search
+  const dId=(slot!==null&&slot!==undefined&&getMeta(slot).discogsId)||(valueCache[key]&&valueCache[key].discogsId)||null;
+  const dUrl=dId?'https://www.discogs.com/release/'+dId:`https://www.discogs.com/search/?q=${encodeURIComponent(artist+' '+album)}&type=release`;
   const db=$('discogsBtn');db.style.display='';db.onclick=()=>window.open(dUrl,'_blank','noopener');
   $('refreshBtn').style.display=(data&&data.skipped)?'none':'';
   const eb=$('editionBtn');

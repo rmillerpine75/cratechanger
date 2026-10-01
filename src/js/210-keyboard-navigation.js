@@ -10,6 +10,7 @@ const MODAL_LAYERS=[
   ['helpModal',()=>closeHelp()],
   ['editModal',()=>closeEditModal()],
   ['editionModal',()=>closeEdition()],
+  ['dataCheckModal',()=>closeDataCheck()],
   ['brModal',()=>closeBrModal()],
   ['resortModal',()=>closeResort()],
   ['shareModal',()=>closeShare()],
@@ -37,6 +38,7 @@ document.addEventListener('keydown',e=>{
   const typing=/^(INPUT|TEXTAREA|SELECT)$/.test(tag);
 
   if(e.key==='Escape'){
+    if($('moreMenu').classList.contains('open')){closeMoreMenu();return}
     const layer=openLayer();
     if(layer){layer[1]();return}
     if(document.activeElement===$('searchInput')&&$('searchInput').value)clearSearch();
@@ -46,7 +48,11 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Enter'&&$('editModal').classList.contains('open')&&e.target.matches&&e.target.matches('#editArtist, #editAlbum')){
     e.preventDefault();saveEdit();return;
   }
-  if((e.key==='z'||e.key==='Z')&&(e.ctrlKey||e.metaKey)&&!e.shiftKey&&!typing&&undoState&&!$('editModal').classList.contains('open')){e.preventDefault();performUndo();return}
+  if((e.ctrlKey||e.metaKey)&&!typing&&!$('editModal').classList.contains('open')){
+    const k=String(e.key).toLowerCase();
+    if(k==='z'&&!e.shiftKey&&undoStack.length){e.preventDefault();performUndo();return}
+    if(((k==='z'&&e.shiftKey)||k==='y')&&redoStack.length){e.preventDefault();performRedo();return}
+  }
   // Never hijack keys while typing, changing a dropdown, or with any overlay open
   if(typing||openLayer())return;
   if(e.key==='/'){e.preventDefault();$('searchInput').focus();return}

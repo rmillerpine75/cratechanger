@@ -83,6 +83,7 @@ function updateFilterUi(f,shown){
   $('searchClear').style.display=f.q?'block':'none';
   $('filterCount').textContent=anyFilter(f)?`SHOWING ${shown} RESULTS`:'';
   const b=$('clearFiltersBtn');if(b)b.style.display=anyFilter(f)?'':'none';
+  updateFilterToggleLabel(f);
 }
 function clearAllFilters(){
   $('searchInput').value='';
@@ -123,6 +124,7 @@ function sortedIndices(sortVal){
   else if(sortVal==='year')idx.sort((a,b)=>(effectiveYear(a)||'9999').localeCompare(effectiveYear(b)||'9999')||a-b);
   else if(sortVal==='plays')idx.sort((a,b)=>emptyLast(a,b,()=>getMeta(b).playHistory.length-getMeta(a).playHistory.length));
   else if(sortVal==='recent')idx.sort((a,b)=>emptyLast(a,b,()=>lastPlayed(b)-lastPlayed(a)));
+  else if(sortVal==='added')idx.sort((a,b)=>emptyLast(a,b,()=>addedTs(b)-addedTs(a)));
   return idx;
 }
 

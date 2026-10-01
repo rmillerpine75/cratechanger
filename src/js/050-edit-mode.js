@@ -24,6 +24,7 @@ function openEditModal(e,i){
   $('loanedTo').value=m.loanedTo||'';
   $('loanDate').value=m.loanDate||'';
   $('moveToSlot').value='';
+  $('editBarcode').value=m.barcode||'';$('barcodeResults').innerHTML='';pendingPin=null;
   const ov=m.override||{};
   $('ovYear').value=ov.year||'';
   $('ovGenres').value=(ov.genres||[]).join(', ');
@@ -124,6 +125,7 @@ async function saveEdit(){
     }else{
       discs[i]=[artist,album];
       const m=getMeta(i);
+      if(isSlotEmpty(oldDisc)&&!isSlotEmpty(discs[i]))m.addedAt=new Date().toISOString();   // a NEW disc in this slot (renames keep their date)
       m.notes=$('editNotes').value.trim();
       m.flags=Object.keys(editPendingFlags).filter(f=>editPendingFlags[f]);
       m.loanedTo=$('loanedTo').value.trim();
@@ -137,6 +139,7 @@ async function saveEdit(){
       if(ovGenres.length)ov.genres=ovGenres;
       if(ovTracks.length)ov.tracks=ovTracks;
       if(Object.keys(ov).length)m.override=ov;else delete m.override;
+      const bc=$('editBarcode').value.replace(/\D/g,'');if(bc)m.barcode=bc;else delete m.barcode;
 
       // Art
       if(typeof pendingArtData==='string'){
@@ -155,6 +158,7 @@ async function saveEdit(){
     closeEditModal();buildGrid();
     toast('SAVED');
     offerUndo((discs[i]?'EDITED':'CLEARED')+' DISC '+String(i+1).padStart(3,'0'),undoSnap);
+    if(pendingPin&&discs[i]){const pin=pendingPin,pd=discs[i];pendingPin=null;ensureData(pd[0],pd[1],true,false,pin).then(()=>{rewireSlotsForKey(keyOf(pd));populateExtraFilters()}).catch(()=>{})}
   }catch(err){
     console.error(err);
     toast('SAVE FAILED — SEE CONSOLE',6000);

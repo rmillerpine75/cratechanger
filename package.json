@@ -1,1 +1,13 @@
-﻿{ "name": "cratechanger", "private": true, "description": "Single-file CD changer collection manager", "scripts": { "build": "node build.mjs", "test": "node build.mjs && node tests/run.mjs", "test:live": "node tests/run.mjs --live" }, "engines": { "node": ">=22" } }
+{
+  "name": "cratechanger",
+  "private": true,
+  "description": "Single-file CD changer collection manager",
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node build.mjs && node tests/run.mjs",
+    "test:live": "node tests/run.mjs --live"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

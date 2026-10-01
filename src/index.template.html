@@ -27,39 +27,56 @@
   <div class="header-right">
     <div class="stat-pill">LOADED <span id="loadedCount">0</span>/<span id="slotTotal">200</span></div>
     <div class="stat-pill wish-pill" id="wishPill" style="display:none" title="Wishlist items are not counted as loaded">♥ <span id="wishCount">0</span> WISHLIST</div>
-    <button class="btn" onclick="jumpToSlot()">→ JUMP</button>
     <button class="btn" onclick="pickRandom()">🎲 RANDOM</button>
     <button class="btn" id="fetchAllBtn" onclick="fetchAllArt()">⬇ FETCH ART</button>
     <button class="btn gold-btn" onclick="openStats()">📊 STATS</button>
-    <button class="btn" onclick="openTimeline()">📅 TIMELINE</button>
     <button class="btn" onclick="openBackupModal()">💾 BACKUP</button>
-    <button class="btn" onclick="openHeatmap()">🔥 HEATMAP</button>
-    <button class="btn" id="themeBtn" onclick="toggleTheme()">☀ LIGHT</button>
-    <button class="btn" onclick="openHelp()" title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts">?</button>
     <button class="btn" id="addSlotBtn" onclick="addSlot()" title="Append an empty slot">&#65291; SLOT</button>
     <button class="btn" id="editToggle" onclick="toggleEditMode()">✏ EDIT</button>
+    <div class="more-wrap">
+      <button class="btn" id="moreBtn" onclick="toggleMoreMenu(event)" aria-haspopup="true" aria-expanded="false" aria-controls="moreMenu">☰ MORE</button>
+      <div class="more-menu" id="moreMenu" role="menu">
+        <button class="btn" onclick="jumpToSlot()">→ JUMP TO SLOT</button>
+        <button class="btn" onclick="openTimeline()">📅 TIMELINE</button>
+        <button class="btn" onclick="openHeatmap()">🔥 HEATMAP</button>
+        <button class="btn" onclick="openDataCheck()">🧹 DATA CHECK</button>
+        <button class="btn" id="themeBtn" onclick="toggleTheme()">☀ LIGHT</button>
+        <button class="btn" onclick="openHelp()" title="Keyboard shortcuts (?)">? SHORTCUTS</button>
+      </div>
+    </div>
   </div>
 </header>
 
 <div class="toolbar">
   <div class="toolbar-group">
     <span class="zoom-label">ZOOM</span>
-    <input type="range" class="zoom-slider" min="110" max="260" value="158" oninput="setZoom(this.value)">
+    <input type="range" class="zoom-slider" min="110" max="260" value="158" oninput="setZoom(this.value)" aria-label="Card size">
   </div>
   <div class="toolbar-sep"></div>
   <div class="toolbar-group">
-    <select class="sort-select" onchange="applyFilters()" id="sortSelect">
+    <select class="sort-select" onchange="applyFilters()" id="sortSelect" aria-label="Sort">
       <option value="slot">SORT: SLOT #</option>
       <option value="artist">SORT: ARTIST A–Z</option>
       <option value="album">SORT: ALBUM A–Z</option>
       <option value="year">SORT: YEAR</option>
       <option value="plays">SORT: MOST PLAYED</option>
       <option value="recent">SORT: RECENTLY PLAYED</option>
+      <option value="added">SORT: RECENTLY ADDED</option>
     </select>
-    <select class="filter-select" onchange="applyFilters()" id="artistFilter">
+    <button class="btn" id="filterToggleBtn" onclick="toggleFilterPanel()" aria-expanded="false" aria-controls="filterPanel">⚲ FILTERS</button>
+    <button class="btn" id="listViewBtn" onclick="toggleListView()">☰ LIST</button>
+    <button class="btn" id="artFitBtn" onclick="toggleArtFit()" title="Crop covers to a square, or show the whole image">▣ FIT: CROP</button>
+    <button class="btn" id="multiSelectBtn" onclick="toggleMultiSelect()">⬜ MULTI-SELECT</button>
+    <button class="btn" id="detectDupsBtn" onclick="detectDuplicates()">🔍 FIND DUPES</button>
+  </div>
+  <div class="toolbar-right">
+    <div class="stat-pill" id="filterCount"></div>
+  </div>
+  <div class="filter-panel" id="filterPanel">
+    <select class="filter-select" onchange="applyFilters()" id="artistFilter" aria-label="Filter by artist">
       <option value="">ALL ARTISTS</option>
     </select>
-    <select class="filter-select" onchange="applyFilters()" id="flagFilter">
+    <select class="filter-select" onchange="applyFilters()" id="flagFilter" aria-label="Filter by flag">
       <option value="">ALL FLAGS</option>
       <option value="broken">BROKEN</option>
       <option value="loaned">LOANED</option>
@@ -71,16 +88,6 @@
     <select class="filter-select" onchange="applyFilters()" id="decadeFilter" aria-label="Filter by decade" style="display:none"><option value="">ALL DECADES</option></select>
     <select class="filter-select" onchange="applyFilters()" id="originFilter" aria-label="Filter by band origin" style="display:none"><option value="">ALL ORIGINS</option></select>
     <button class="btn" id="clearFiltersBtn" onclick="clearAllFilters()" style="display:none">✕ CLEAR FILTERS</button>
-  </div>
-  <div class="toolbar-sep"></div>
-  <div class="toolbar-group">
-    <button class="btn" id="listViewBtn" onclick="toggleListView()">☰ LIST</button>
-    <button class="btn" id="artFitBtn" onclick="toggleArtFit()" title="Crop covers to a square, or show the whole image">▣ FIT: CROP</button>
-    <button class="btn" id="multiSelectBtn" onclick="toggleMultiSelect()">⬜ MULTI-SELECT</button>
-    <button class="btn" id="detectDupsBtn" onclick="detectDuplicates()">🔍 FIND DUPES</button>
-  </div>
-  <div class="toolbar-right">
-    <div class="stat-pill" id="filterCount"></div>
   </div>
 </div>
 
@@ -119,6 +126,7 @@
           </div>
           <div class="play-history-row" id="playHistoryRow"></div>
           <div class="modal-notes" id="modalNotes" style="display:none"></div>
+          <div class="modal-value" id="modalValue" style="display:none"></div>
         </div>
         <div>
           <div class="modal-actions">
@@ -129,6 +137,7 @@
             <button class="btn-sm" id="editionBtn" onclick="openEditionPicker()" style="display:none" title="Wrong release? Pick the exact pressing you own">⇄ EDITION</button>
             <button class="btn-sm" id="mbLinkBtn" style="display:none">MB</button>
             <button class="btn-sm blue" id="discogsBtn" style="display:none">DISCOGS</button>
+            <button class="btn-sm" id="maBtn" onclick="openMetalArchives()" title="Encyclopaedia Metallum (Metal Archives) band search">M-A</button>
             <button class="btn-sm" id="wikiBtn" onclick="openWiki()">WIKI</button>
             <button class="btn-sm" id="ytBtn" onclick="openYouTube()">▶ YT</button>
             <button class="btn-sm" id="spotifyBtn" onclick="openSpotify()">SPOTIFY</button>
@@ -169,6 +178,13 @@
     <input type="text" id="editArtist" placeholder="e.g. Slayer">
     <label>ALBUM TITLE</label>
     <input type="text" id="editAlbum" placeholder="e.g. Reign in Blood">
+    <label>BARCODE (OPTIONAL — FINDS THE EXACT EDITION)</label>
+    <div class="move-row">
+      <input type="text" id="editBarcode" inputmode="numeric" placeholder="digits under the barcode, e.g. 3760053840156">
+      <button class="btn" type="button" onclick="lookupBarcode()">⌕ LOOK UP</button>
+      <button class="btn" type="button" id="scanBtn" onclick="scanBarcode()" style="display:none">📷 SCAN</button>
+    </div>
+    <div class="edition-list" id="barcodeResults"></div>
     <label>NOTES</label>
     <textarea id="editNotes" rows="2" placeholder="Condition notes, where you got it, pressing info..."></textarea>
     <label>FLAGS</label>
@@ -284,9 +300,24 @@
       <kbd>← → ↑ ↓</kbd><span>Move between discs</span>
       <kbd>Enter</kbd><span>Open the highlighted disc · save in the edit dialog</span>
       <kbd>Esc</kbd><span>Close the top window · clear the search</span>
-      <kbd>Ctrl + Z</kbd><span>Undo the last edit / clear / swap / re-sort</span>
+      <kbd>Ctrl + Z</kbd><span>Undo — repeat to go further back (last 25 actions)</span>
+      <kbd>Ctrl + Shift + Z</kbd><span>Redo</span>
       <kbd>?</kbd><span>This help</span>
     </div>
+  </div>
+</div>
+
+<!-- Data check -->
+<div class="br-modal" id="dataCheckModal" role="dialog" aria-modal="true" aria-label="Data check">
+  <div class="br-box wide">
+    <button class="modal-close" onclick="closeDataCheck()" aria-label="Close">✕</button>
+    <h3>DATA CHECK</h3>
+    <div class="br-last-backup">Suggested clean-ups. Nothing changes unless you click a fix, and every fix can be undone.</div>
+    <div style="margin:10px 0;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+      <button class="btn" id="dcSpellBtn" onclick="checkSpellingOnline()">⌕ CHECK SPELLING ONLINE</button>
+      <span class="br-last-backup" id="dcSpellStatus">Compares titles MusicBrainz could not match with the closest real title by the same artist.</span>
+    </div>
+    <div class="dc-list" id="dataCheckList"></div>
   </div>
 </div>
 
@@ -339,6 +370,9 @@
       <p>TOOLS</p>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn" onclick="openResort()">⇅ RE-SORT PLAN</button>
+        <button class="btn" onclick="openDataCheck()">🧹 DATA CHECK</button>
+        <button class="btn" onclick="document.getElementById('discogsFileInput').click()" title="Discogs: Collection → Export">📥 IMPORT DISCOGS CSV</button>
+        <input type="file" id="discogsFileInput" accept=".csv,text/csv" style="display:none" onchange="importDiscogsCsv(event)">
         <button class="btn" onclick="openShare()">🌐 SHAREABLE PAGE</button>
       </div>
     </div>
@@ -390,7 +424,7 @@
   <button class="btn" onclick="clearMultiSelect()">✕ DESELECT</button>
 </div>
 
-<div class="undo-bar" id="undoBar" role="status" aria-live="polite"><span id="undoText"></span><button type="button" onclick="performUndo()">↶ UNDO</button><button type="button" class="undo-x" aria-label="Dismiss" onclick="dismissUndo()">✕</button></div>
+<div class="undo-bar" id="undoBar" role="status" aria-live="polite"><span id="undoText"></span><button type="button" id="undoBtn" onclick="performUndo()" title="Ctrl+Z">↶ UNDO</button><button type="button" id="redoBtn" onclick="performRedo()" title="Ctrl+Shift+Z" style="display:none">↷ REDO</button><button type="button" class="undo-x" aria-label="Dismiss" onclick="dismissUndo()">✕</button></div>
 
 <!-- Toast -->
 <div class="toast" id="toast"></div>

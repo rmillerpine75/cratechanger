@@ -35,6 +35,31 @@
       closeEdition(); currentModalIndex = null;
       info('live: auto-backup API on file://', 'isSecureContext=' + window.isSecureContext + ', showSaveFilePicker=' + typeof window.showSaveFilePicker);
     }
+    if (typeof checkSpellingOnline === 'function') {
+      // barcode -> exact edition, using the real barcode of the matched release
+      const relJson = await mbFetchJson('https://musicbrainz.org/ws/2/release/' + data.mbid + '?fmt=json');
+      const code = relJson && relJson.barcode;
+      if (code) {
+        openEditModal(null, discs.findIndex(d => isSlotEmpty(d)));
+        $('editBarcode').value = code; await lookupBarcode();
+        const rows = Array.from(document.querySelectorAll('#barcodeResults .edition-row'));
+        ok('live: barcode lookup finds the exact release', rows.some(r => r.dataset.bcId === data.mbid), code + ' -> ' + rows.length + ' result(s)');
+        closeEditModal();
+      } else info('live: barcode', 'the matched release has no barcode on MusicBrainz');
+      // the suspected typo
+      const mi = discs.findIndex(d => d && d[1] === 'Frality Of The Human Condition');
+      if (mi >= 0) {
+        await ensureData(discs[mi][0], discs[mi][1]);
+        spellSuggestions = [];
+        await checkSpellingOnline();
+        const s = spellSuggestions.find(x => x.slot === mi);
+        ok('live: spelling check suggests the real title for the typo', !!s, s ? '"' + s.from + '" -> "' + s.to + '" (' + Math.round(s.sim * 100) + '%)' : $('dcSpellStatus').textContent);
+      }
+      // a real Discogs price (via the MusicBrainz -> Discogs link)
+      const v = await estimateValueFor(i, true);
+      ok('live: Discogs price lookup completes', !!v);
+      info('live: Discogs price for Absu - Tara', v && v.discogsId ? (v.lowest != null ? fmtMoney(v.lowest, v.currency) + ' lowest listing, ' + v.forSale + ' for sale (Discogs release ' + v.discogsId + ')' : 'no current listing (Discogs release ' + v.discogsId + ')') : 'no Discogs link for this edition on MusicBrainz');
+    }
   } catch (e) { R.push('FAIL exception: ' + (e.stack || e)); }
   R.push('SUMMARY pass=' + R.filter(r => r.startsWith('PASS')).length + ' fail=' + R.filter(r => r.startsWith('FAIL')).length);
   document.body.insertAdjacentHTML('beforeend', '<pre id="__results">' + escH(R.join('\n')) + '</pre>');
