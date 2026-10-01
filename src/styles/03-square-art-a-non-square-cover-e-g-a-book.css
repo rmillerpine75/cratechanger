@@ -1,0 +1,5 @@
+
+/* ───────── square art: a non-square cover (e.g. a booklet scan) must not stretch its whole grid row ───────── */
+.slot-art,.slot-art-placeholder{aspect-ratio:1/1;flex:0 0 auto;height:auto;min-height:0}
+.slot-art{object-fit:cover;object-position:center}
+body.list-view .slot-art,body.list-view .slot-art-placeholder{width:44px;height:44px;flex:0 0 44px}

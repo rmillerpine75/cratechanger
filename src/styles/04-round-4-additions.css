@@ -1,0 +1,43 @@
+
+/* ───────── round-4 additions ───────── */
+.slot-flags{left:38px;top:3px}
+body.list-view .slot-flags{left:auto;top:auto}
+.wish-pill span{color:var(--purple)}
+body.art-contain .slot-art{object-fit:contain;background:var(--surface2)}
+.br-box{position:relative;max-height:90vh;overflow-y:auto}
+.br-box.wide{width:760px}
+.country-flag{width:34px;font-family:'Share Tech Mono',monospace;font-size:.6rem;color:var(--muted)}
+.country-name{width:130px}
+.move-row{display:flex;gap:8px}
+.move-row input{flex:1}
+.override-box{margin-top:14px;border:1px solid var(--border);padding:8px 12px}
+.override-box summary{font-family:'Share Tech Mono',monospace;font-size:.62rem;letter-spacing:1px;color:var(--muted);cursor:pointer;text-transform:uppercase}
+.manual-note{font-family:'Share Tech Mono',monospace;font-size:.56rem;color:var(--gold);letter-spacing:1px;margin-bottom:6px}
+.edition-list{display:flex;flex-direction:column;gap:5px;max-height:55vh;overflow-y:auto;margin-top:8px}
+.edition-row{display:flex;gap:10px;align-items:baseline;text-align:left;padding:8px 10px;background:var(--surface2);border:1px solid var(--border);color:var(--text);cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:.62rem;flex-wrap:wrap;width:100%}
+.edition-row:hover,.edition-row:focus-visible{border-color:var(--accent)}
+.edition-row.current{border-color:var(--gold)}
+.ed-year{color:var(--accent);flex-shrink:0;width:82px}
+.ed-main{flex:1;min-width:140px}
+.ed-meta{color:var(--muted)}
+.ed-cur{color:var(--gold)}
+.rs-controls{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:10px 0}
+.rs-controls select{background:var(--surface2);color:var(--text);border:1px solid var(--border);font-family:'Share Tech Mono',monospace;font-size:.62rem;padding:6px 8px}
+.rs-check{font-family:'Share Tech Mono',monospace;font-size:.6rem;color:var(--muted);letter-spacing:1px;display:flex;gap:6px;align-items:center;cursor:pointer}
+.resort-steps{max-height:42vh;overflow-y:auto;margin-top:8px;border:1px solid var(--border)}
+.rs-step{display:flex;gap:10px;align-items:baseline;padding:5px 8px;border-bottom:1px solid var(--border);font-family:'Share Tech Mono',monospace;font-size:.6rem;cursor:pointer}
+.rs-step .rs-n{color:var(--muted);width:34px;flex-shrink:0}
+.rs-step .rs-slots{color:var(--accent);flex-shrink:0;width:92px}
+.rs-step .rs-names{color:var(--text);flex:1;min-width:0}
+.rs-step.done{opacity:.4;text-decoration:line-through}
+.share-check,.share-opt{display:block;font-family:'Share Tech Mono',monospace;font-size:.62rem;color:var(--muted);letter-spacing:1px;margin:10px 0 0;text-transform:uppercase;cursor:pointer}
+.share-opt input[type=text]{display:block;width:100%;margin-top:5px;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:8px 10px;font-family:'Barlow',sans-serif;font-size:.88rem}
+.help-grid{display:grid;grid-template-columns:auto 1fr;gap:9px 16px;align-items:center}
+.help-grid span{font-family:'Share Tech Mono',monospace;font-size:.62rem;color:var(--muted);letter-spacing:.5px}
+kbd{font-family:'Share Tech Mono',monospace;font-size:.62rem;border:1px solid var(--border);background:var(--surface2);color:var(--text);padding:2px 7px;white-space:nowrap}
+.storage-track{height:8px;background:var(--surface2);border:1px solid var(--border);margin-bottom:4px}
+.storage-fill{height:100%;background:var(--green)}
+.storage-fill.warn{background:var(--orange)}
+.storage-fill.bad{background:var(--accent)}
+/* dark scrollbars inside dialogs (were bright white) */
+.br-box,.resort-steps,.edition-list,.stats-box,.edit-box{scrollbar-color:var(--border) var(--surface)}

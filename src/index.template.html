@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CrateChanger — 200 Disc</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Share+Tech+Mono&family=Barlow:wght@300;400;600&display=swap" rel="stylesheet">
+<style>@@STYLES@@</style>
+</head>
+<body>
+
+<div id="nowPlayingBanner">
+  <span class="np-disc" id="npDisc">▶ DISC 001</span>
+  <span class="np-label">NOW PLAYING —</span>
+  <span class="np-text" id="npText">—</span>
+  <button class="np-clear" onclick="clearNowPlaying()">✕</button>
+</div>
+
+<header>
+  <div class="logo"><h1>CrateChanger</h1><span id="logoSub">200-DISC</span></div>
+  <div class="header-center">
+    <div class="search-wrap">
+      <input type="text" id="searchInput" placeholder="SEARCH ARTIST / ALBUM / DISC#..." oninput="applyFilters()">
+      <button class="search-clear" id="searchClear" onclick="clearSearch()">✕</button>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="stat-pill">LOADED <span id="loadedCount">0</span>/<span id="slotTotal">200</span></div>
+    <div class="stat-pill wish-pill" id="wishPill" style="display:none" title="Wishlist items are not counted as loaded">♥ <span id="wishCount">0</span> WISHLIST</div>
+    <button class="btn" onclick="jumpToSlot()">→ JUMP</button>
+    <button class="btn" onclick="pickRandom()">🎲 RANDOM</button>
+    <button class="btn" id="fetchAllBtn" onclick="fetchAllArt()">⬇ FETCH ART</button>
+    <button class="btn gold-btn" onclick="openStats()">📊 STATS</button>
+    <button class="btn" onclick="openTimeline()">📅 TIMELINE</button>
+    <button class="btn" onclick="openBackupModal()">💾 BACKUP</button>
+    <button class="btn" onclick="openHeatmap()">🔥 HEATMAP</button>
+    <button class="btn" id="themeBtn" onclick="toggleTheme()">☀ LIGHT</button>
+    <button class="btn" onclick="openHelp()" title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts">?</button>
+    <button class="btn" id="addSlotBtn" onclick="addSlot()" title="Append an empty slot">&#65291; SLOT</button>
+    <button class="btn" id="editToggle" onclick="toggleEditMode()">✏ EDIT</button>
+  </div>
+</header>
+
+<div class="toolbar">
+  <div class="toolbar-group">
+    <span class="zoom-label">ZOOM</span>
+    <input type="range" class="zoom-slider" min="110" max="260" value="158" oninput="setZoom(this.value)">
+  </div>
+  <div class="toolbar-sep"></div>
+  <div class="toolbar-group">
+    <select class="sort-select" onchange="applyFilters()" id="sortSelect">
+      <option value="slot">SORT: SLOT #</option>
+      <option value="artist">SORT: ARTIST A–Z</option>
+      <option value="album">SORT: ALBUM A–Z</option>
+      <option value="year">SORT: YEAR</option>
+      <option value="plays">SORT: MOST PLAYED</option>
+      <option value="recent">SORT: RECENTLY PLAYED</option>
+    </select>
+    <select class="filter-select" onchange="applyFilters()" id="artistFilter">
+      <option value="">ALL ARTISTS</option>
+    </select>
+    <select class="filter-select" onchange="applyFilters()" id="flagFilter">
+      <option value="">ALL FLAGS</option>
+      <option value="broken">BROKEN</option>
+      <option value="loaned">LOANED</option>
+      <option value="replace">NEEDS REPLACE</option>
+      <option value="duplicate">DUPLICATE</option>
+      <option value="wishlist">WISHLIST</option>
+    </select>
+    <select class="filter-select" onchange="applyFilters()" id="genreFilter" aria-label="Filter by genre" style="display:none"><option value="">ALL GENRES</option></select>
+    <select class="filter-select" onchange="applyFilters()" id="decadeFilter" aria-label="Filter by decade" style="display:none"><option value="">ALL DECADES</option></select>
+    <select class="filter-select" onchange="applyFilters()" id="originFilter" aria-label="Filter by band origin" style="display:none"><option value="">ALL ORIGINS</option></select>
+    <button class="btn" id="clearFiltersBtn" onclick="clearAllFilters()" style="display:none">✕ CLEAR FILTERS</button>
+  </div>
+  <div class="toolbar-sep"></div>
+  <div class="toolbar-group">
+    <button class="btn" id="listViewBtn" onclick="toggleListView()">☰ LIST</button>
+    <button class="btn" id="artFitBtn" onclick="toggleArtFit()" title="Crop covers to a square, or show the whole image">▣ FIT: CROP</button>
+    <button class="btn" id="multiSelectBtn" onclick="toggleMultiSelect()">⬜ MULTI-SELECT</button>
+    <button class="btn" id="detectDupsBtn" onclick="detectDuplicates()">🔍 FIND DUPES</button>
+  </div>
+  <div class="toolbar-right">
+    <div class="stat-pill" id="filterCount"></div>
+  </div>
+</div>
+
+<div class="grid-container">
+  <div class="grid" id="grid"></div>
+</div>
+
+<!-- Fetch Progress Bar -->
+<div class="fetch-bar-wrap" id="fetchBarWrap">
+  <div class="fetch-status">FETCHING <span id="fetchCurrent">0</span>/<span id="fetchTotal">0</span></div>
+  <div class="fetch-bar-track"><div class="fetch-bar-fill" id="fetchBarFill"></div></div>
+  <div class="fetch-status" id="fetchCurrentLabel" style="min-width:260px;text-align:right;overflow:hidden;text-overflow:ellipsis"></div>
+  <button class="btn-stop" onclick="stopFetchAll()">■ STOP</button>
+</div>
+
+<!-- Info Modal -->
+<div class="modal-backdrop" id="infoModal" role="dialog" aria-modal="true" aria-label="Disc details" onclick="handleBackdropClick(event)">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="modal-header">
+      <div class="modal-art-wrap" id="modalArtWrap" onclick="openFullscreenArt()">
+        <div class="modal-art-placeholder">💿</div>
+      </div>
+      <div class="modal-meta">
+        <div>
+          <div class="modal-disc-num" id="modalDiscNum">DISC 001</div>
+          <div class="modal-artist" id="modalArtist">—</div>
+          <div class="modal-album" id="modalAlbum">—</div>
+          <div class="modal-tags" id="modalTags"></div>
+          <div class="modal-condition-row">
+            <span class="cond-label">CONDITION:</span>
+            <button class="cond-btn" data-c="mint" onclick="setCondition('mint')">MINT</button>
+            <button class="cond-btn" data-c="good" onclick="setCondition('good')">GOOD</button>
+            <button class="cond-btn" data-c="scratched" onclick="setCondition('scratched')">SCRATCHED</button>
+            <button class="cond-btn" data-c="unplayable" onclick="setCondition('unplayable')">UNPLAYABLE</button>
+          </div>
+          <div class="play-history-row" id="playHistoryRow"></div>
+          <div class="modal-notes" id="modalNotes" style="display:none"></div>
+        </div>
+        <div>
+          <div class="modal-actions">
+            <button class="btn-sm green" id="nowPlayingBtn" onclick="setNowPlaying()">▶ NOW PLAYING</button>
+            <button class="btn-sm" id="logPlayBtn" onclick="logPlay()">+ LOG PLAY</button>
+            <button class="btn-sm gold" id="downloadArtBtn" onclick="downloadArt()" style="display:none">⬇ ART</button>
+            <button class="btn-sm" id="refreshBtn" onclick="refreshCurrentDisc()" style="display:none">&#8635; REFRESH</button>
+            <button class="btn-sm" id="editionBtn" onclick="openEditionPicker()" style="display:none" title="Wrong release? Pick the exact pressing you own">⇄ EDITION</button>
+            <button class="btn-sm" id="mbLinkBtn" style="display:none">MB</button>
+            <button class="btn-sm blue" id="discogsBtn" style="display:none">DISCOGS</button>
+            <button class="btn-sm" id="wikiBtn" onclick="openWiki()">WIKI</button>
+            <button class="btn-sm" id="ytBtn" onclick="openYouTube()">▶ YT</button>
+            <button class="btn-sm" id="spotifyBtn" onclick="openSpotify()">SPOTIFY</button>
+            <button class="btn-sm" id="qrBtn" onclick="showQR()">QR</button>
+          </div>
+          <div class="preview-player" id="previewPlayer">
+            <span class="preview-label">30s PREVIEW</span>
+            <audio id="previewAudio" controls></audio>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div class="tracklist-header">TRACKLIST<span class="loading-pulse" id="loadingPulse" style="display:none"></span></div>
+      <div class="track-list" id="trackList"></div>
+      <div class="lyrics-panel" id="lyricsPanel">
+        <div class="lyrics-track-title" id="lyricsTrkTitle"></div>
+        <div class="lyrics-text" id="lyricsText"></div>
+      </div>
+    </div>
+    <div class="similar-section" id="similarSection" style="display:none">
+      <div class="similar-header">RELATED ARTISTS</div>
+      <div class="similar-list" id="similarList"></div>
+    </div>
+  </div>
+</div>
+<div id="fullscreenArt" onclick="closeFullscreenArt()">
+  <img id="fullscreenArtImg" src="" alt="art">
+</div>
+
+<!-- Edit Modal -->
+<div class="edit-modal" id="editModal" role="dialog" aria-modal="true" aria-label="Edit disc slot">
+  <div class="edit-box">
+    <h3>EDIT DISC SLOT</h3>
+    <label>DISC NUMBER</label>
+    <input type="text" id="editSlotNum" readonly style="color:var(--muted)">
+    <label>ARTIST</label>
+    <input type="text" id="editArtist" placeholder="e.g. Slayer">
+    <label>ALBUM TITLE</label>
+    <input type="text" id="editAlbum" placeholder="e.g. Reign in Blood">
+    <label>NOTES</label>
+    <textarea id="editNotes" rows="2" placeholder="Condition notes, where you got it, pressing info..."></textarea>
+    <label>FLAGS</label>
+    <div class="edit-flags">
+      <button class="flag-toggle" data-flag="broken" onclick="toggleFlag('broken')">BROKEN</button>
+      <button class="flag-toggle" data-flag="loaned" onclick="toggleFlag('loaned')">LOANED OUT</button>
+      <button class="flag-toggle" data-flag="replace" onclick="toggleFlag('replace')">NEEDS REPLACE</button>
+      <button class="flag-toggle" data-flag="duplicate" onclick="toggleFlag('duplicate')">DUPLICATE</button>
+      <button class="flag-toggle" data-flag="wishlist" onclick="toggleFlag('wishlist')">WISHLIST</button>
+    </div>
+    <div class="loan-fields" id="loanFields">
+      <input type="text" id="loanedTo" placeholder="Loaned to...">
+      <input type="date" id="loanDate">
+    </div>
+    <label>ALBUM ART (overrides auto-fetched)</label>
+    <div class="art-upload-row">
+      <div class="art-upload-preview" id="artUploadPreview">
+        <span id="artUploadPlaceholder">💿</span>
+        <img id="artUploadImg" style="display:none;width:100%;height:100%;object-fit:cover">
+      </div>
+      <div class="art-upload-controls">
+        <label class="btn-upload" for="artFileInput">⬆ UPLOAD IMAGE</label>
+        <input type="file" id="artFileInput" accept="image/*" style="display:none" onchange="handleArtUpload(event)">
+        <button class="btn-clear-art" id="clearArtBtn" onclick="clearUploadedArt()">✕ REMOVE ART</button>
+        <div class="art-hint">JPG · PNG · WEBP<br>Resized to 500px, stored locally</div>
+      </div>
+    </div>
+    <label>MOVE THIS DISC TO SLOT # (SWAPS WITH WHATEVER IS THERE)</label>
+    <div class="move-row">
+      <input type="number" id="moveToSlot" min="1" placeholder="e.g. 42" inputmode="numeric">
+      <button class="btn" type="button" onclick="moveToSlot()">⇄ SAVE &amp; MOVE</button>
+    </div>
+    <details class="override-box" id="overrideBox">
+      <summary>MANUAL OVERRIDES — YEAR, GENRES, TRACKLIST (for bootlegs, demos, or a wrong lookup)</summary>
+      <label>YEAR</label>
+      <input type="text" id="ovYear" maxlength="4" placeholder="e.g. 1993" inputmode="numeric">
+      <label>GENRES (COMMA SEPARATED)</label>
+      <input type="text" id="ovGenres" placeholder="e.g. black metal, thrash metal">
+      <label>TRACKLIST (ONE TITLE PER LINE)</label>
+      <textarea id="ovTracks" rows="5" placeholder="Track one&#10;Track two"></textarea>
+    </details>
+    <div class="edit-box-actions">
+      <button class="btn-save" onclick="saveEdit()">SAVE</button>
+      <button class="btn-cancel-edit" onclick="closeEditModal()">CANCEL</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edition picker -->
+<div class="br-modal" id="editionModal" role="dialog" aria-modal="true" aria-label="Choose edition">
+  <div class="br-box wide">
+    <button class="modal-close" onclick="closeEdition()" aria-label="Close">✕</button>
+    <h3>CHOOSE THE RIGHT EDITION</h3>
+    <div class="br-last-backup" id="editionIntro"></div>
+    <div class="edition-list" id="editionList"></div>
+    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn" onclick="useAutomaticEdition()">↺ USE AUTOMATIC MATCH</button>
+      <button class="btn" onclick="closeEdition()">CANCEL</button>
+    </div>
+  </div>
+</div>
+
+<!-- Re-sort plan -->
+<div class="br-modal" id="resortModal" role="dialog" aria-modal="true" aria-label="Re-sort plan">
+  <div class="br-box wide">
+    <button class="modal-close" onclick="closeResort()" aria-label="Close">✕</button>
+    <h3>RE-SORT PLAN</h3>
+    <div class="br-last-backup">The fewest swaps to put the physical changer in order. Tick steps off as you go, then APPLY so the app matches. Wishlist slots never move.</div>
+    <div class="rs-controls">
+      <select id="resortKey" onchange="renderResortPlan()" aria-label="Sort by">
+        <option value="artist">ARTIST A–Z (IGNORING "THE")</option>
+        <option value="album">ALBUM A–Z</option>
+        <option value="year">YEAR (ORIGINAL RELEASE)</option>
+      </select>
+      <label class="rs-check"><input type="checkbox" id="resortCompact" checked onchange="renderResortPlan()"> MOVE EMPTY SLOTS TO THE END</label>
+    </div>
+    <div class="br-last-backup" id="resortSummary"></div>
+    <div class="resort-steps" id="resortSteps"></div>
+    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn" onclick="copyResortSteps()">⧉ COPY STEPS</button>
+      <button class="btn gold-btn" onclick="applyResort()">✓ APPLY TO THE APP</button>
+      <button class="btn" onclick="closeResort()">CLOSE</button>
+    </div>
+  </div>
+</div>
+
+<!-- Shareable page -->
+<div class="br-modal" id="shareModal" role="dialog" aria-modal="true" aria-label="Shareable page">
+  <div class="br-box">
+    <button class="modal-close" onclick="closeShare()" aria-label="Close">✕</button>
+    <h3>SHAREABLE PAGE</h3>
+    <div class="br-last-backup">Makes ONE standalone HTML file of your collection — searchable, read-only, works offline. Flags, loans, play history and backups are never included.</div>
+    <label class="share-opt">TITLE <input type="text" id="shareTitle" value="My CD Collection"></label>
+    <label class="share-check"><input type="checkbox" id="shareArt" checked> INCLUDE COVER ART</label>
+    <label class="share-check"><input type="checkbox" id="shareMeta" checked> INCLUDE YEAR + GENRES</label>
+    <label class="share-check"><input type="checkbox" id="shareWish"> INCLUDE MY WISHLIST AS A SECTION</label>
+    <label class="share-check"><input type="checkbox" id="shareNotes"> INCLUDE MY NOTES (PRIVATE — OFF BY DEFAULT)</label>
+    <div style="margin-top:14px;display:flex;gap:8px">
+      <button class="btn gold-btn" onclick="downloadSharePage()">⬇ DOWNLOAD PAGE</button>
+      <button class="btn" onclick="closeShare()">CANCEL</button>
+    </div>
+  </div>
+</div>
+
+<!-- Keyboard help -->
+<div class="br-modal" id="helpModal" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts">
+  <div class="br-box">
+    <button class="modal-close" onclick="closeHelp()" aria-label="Close">✕</button>
+    <h3>KEYBOARD SHORTCUTS</h3>
+    <div class="help-grid">
+      <kbd>/</kbd><span>Jump to the search box</span>
+      <kbd>#12</kbd><span>(in search) show exactly slot 12</span>
+      <kbd>← → ↑ ↓</kbd><span>Move between discs</span>
+      <kbd>Enter</kbd><span>Open the highlighted disc · save in the edit dialog</span>
+      <kbd>Esc</kbd><span>Close the top window · clear the search</span>
+      <kbd>Ctrl + Z</kbd><span>Undo the last edit / clear / swap / re-sort</span>
+      <kbd>?</kbd><span>This help</span>
+    </div>
+  </div>
+</div>
+
+<!-- Stats Modal -->
+<div class="stats-modal" id="statsModal" role="dialog" aria-modal="true" aria-label="Collection stats">
+  <div class="stats-box">
+    <button class="modal-close" onclick="closeStats()">✕</button>
+    <h2>COLLECTION STATS</h2>
+    <div id="statsContent"></div>
+  </div>
+</div>
+
+<!-- Timeline Modal -->
+<div class="timeline-modal" id="timelineModal" role="dialog" aria-modal="true" aria-label="Release timeline">
+  <div class="timeline-box">
+    <button class="modal-close" style="position:absolute;top:10px;right:10px" onclick="closeTimeline()">✕</button>
+    <h2>RELEASE TIMELINE</h2>
+    <div class="timeline-scroll"><div class="timeline-inner" id="timelineInner"></div></div>
+  </div>
+</div>
+
+<!-- Backup/Restore Modal -->
+<div class="br-modal" id="brModal" role="dialog" aria-modal="true" aria-label="Backup and restore">
+  <div class="br-box">
+    <button class="modal-close" onclick="closeBrModal()">✕</button>
+    <h3>BACKUP & RESTORE</h3>
+    <div class="br-section">
+      <p>EXPORT full collection data — disc list, custom art, flags, notes, play history, condition — to a JSON file. Store it somewhere safe. localStorage is wiped by "Clear Browsing Data".</p>
+      <div class="br-last-backup" id="lastBackupLabel"></div>
+      <div style="margin-top:10px;display:flex;gap:8px">
+        <button class="btn" onclick="exportBackup()">⬇ EXPORT JSON</button>
+        <button class="btn" onclick="exportCSV()">⬇ EXPORT CSV</button>
+        <button class="btn" onclick="printView()">🖨 PRINT LIST</button>
+      </div>
+    </div>
+    <div class="br-section">
+      <p>AUTO-BACKUP — pick a file (e.g. in OneDrive or Documents) and this page re-writes it a few seconds after every change, so clearing browser data can't take your collection with it. Chrome / Edge.</p>
+      <div class="br-last-backup" id="abStatus"></div>
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" id="abLinkBtn" onclick="linkBackupFile()">🔗 LINK BACKUP FILE</button>
+        <button class="btn gold-btn" id="abReenableBtn" onclick="reenableAutoBackup()" style="display:none">RE-ENABLE</button>
+        <button class="btn" id="abUnlinkBtn" onclick="unlinkBackupFile()" style="display:none">UNLINK</button>
+      </div>
+    </div>
+    <div class="br-section">
+      <p>STORAGE — how full this browser's storage for local pages is.</p>
+      <div id="storageMeter"></div>
+    </div>
+    <div class="br-section">
+      <p>TOOLS</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" onclick="openResort()">⇅ RE-SORT PLAN</button>
+        <button class="btn" onclick="openShare()">🌐 SHAREABLE PAGE</button>
+      </div>
+    </div>
+    <div class="br-section">
+      <p>IMPORT a previously exported JSON backup. This will overwrite your current collection data.</p>
+      <label class="btn-upload" for="restoreFileInput" style="display:inline-block;margin-top:0">⬆ IMPORT JSON</label>
+      <input type="file" id="restoreFileInput" accept=".json" style="display:none" onchange="importBackup(event)">
+    </div>
+    <div class="br-section">
+      <p>IMPORT FROM v7 — brings over the disc list you edited in <b>cd_changer_7.html</b> (same browser), plus its cover-art lookups and any custom art. Flags, notes and play history stay with their discs. Shows a dry run first, downloads a safety backup, and can be undone.</p>
+      <div class="br-last-backup" id="v7StatusLabel"></div>
+      <button class="btn" id="importV7Btn" style="margin-top:10px" onclick="importFromV7()">⇣ IMPORT FROM v7</button>
+    </div>
+  </div>
+</div>
+
+<!-- Heatmap Modal -->
+<div class="heatmap-modal" id="heatmapModal" role="dialog" aria-modal="true" aria-label="Slot heatmap">
+  <div class="heatmap-box">
+    <button class="modal-close" onclick="closeHeatmap()">✕</button>
+    <h2>SLOT HEATMAP</h2>
+    <div class="heatmap-legend">
+      <div class="hm-legend-item"><div class="hm-dot" style="background:var(--accent)"></div>FILLED</div>
+      <div class="hm-legend-item"><div class="hm-dot" style="background:var(--purple)"></div>WISHLIST</div>
+      <div class="hm-legend-item"><div class="hm-dot" style="background:#6a0a0d"></div>BROKEN</div>
+      <div class="hm-legend-item"><div class="hm-dot" style="background:var(--blue)"></div>LOANED</div>
+      <div class="hm-legend-item"><div class="hm-dot" style="background:var(--border)"></div>EMPTY</div>
+    </div>
+    <div class="heatmap-grid" id="heatmapGrid"></div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:.6rem;color:var(--muted);letter-spacing:.8px">CLICK ANY SLOT TO OPEN — HOVER FOR DETAILS</div>
+  </div>
+</div>
+
+<!-- Heatmap Tooltip -->
+<div class="hm-tooltip" id="hmTooltip"></div>
+
+<!-- Batch Action Bar -->
+<div class="batch-bar" id="batchBar">
+  <div class="batch-count" id="batchCount">0 SELECTED</div>
+  <div class="batch-sep"></div>
+  <div class="batch-label">BATCH:</div>
+  <button class="btn" onclick="batchFlag('broken')">MARK BROKEN</button>
+  <button class="btn" onclick="batchFlag('loaned')">MARK LOANED</button>
+  <button class="btn" onclick="batchFlag('replace')">MARK REPLACE</button>
+  <button class="btn" onclick="batchFlag('wishlist')">MARK WISHLIST</button>
+  <button class="btn" onclick="batchClearFlags()">CLEAR FLAGS</button>
+  <button class="btn" onclick="batchRefetchArt()">⬇ REFETCH ART</button>
+  <button class="btn" onclick="batchClear()">🗑 CLEAR SLOTS</button>
+  <button class="btn" onclick="clearMultiSelect()">✕ DESELECT</button>
+</div>
+
+<div class="undo-bar" id="undoBar" role="status" aria-live="polite"><span id="undoText"></span><button type="button" onclick="performUndo()">↶ UNDO</button><button type="button" class="undo-x" aria-label="Dismiss" onclick="dismissUndo()">✕</button></div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>@@SCRIPT@@</script>
+</body>
+</html>

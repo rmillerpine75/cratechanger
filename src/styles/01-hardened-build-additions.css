@@ -1,0 +1,30 @@
+
+/* ───────── hardened-build additions ───────── */
+#addSlotBtn{display:none}
+body.edit-mode #addSlotBtn{display:inline-block}
+.slot:focus-visible,.btn:focus-visible,.btn-sm:focus-visible,.modal-close:focus-visible,.track-icon-btn:focus-visible,
+.similar-chip:focus-visible,.search-wrap input:focus-visible,.btn-save:focus-visible,.btn-cancel-edit:focus-visible,
+.btn-upload:focus-visible,.flag-toggle:focus-visible,.cond-btn:focus-visible,.btn-stop:focus-visible,.btn-clear-art:focus-visible,
+.sort-select:focus-visible,.filter-select:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.track-item:focus-within .track-icons{opacity:1}
+@media (hover:none){.track-icons{opacity:1}}
+body.list-view .slot-art-placeholder{width:44px;flex:0 0 44px;min-height:0}
+@media (max-width:760px){
+  header{padding:10px 12px}
+  .header-center{max-width:none;flex-basis:100%;order:3}
+  .header-right{width:100%}
+  .toolbar{padding:8px 12px}
+  .toolbar-right{margin-left:0}
+  .grid-container{padding:12px 12px 90px}
+  .modal-header{flex-direction:column}
+  .modal-art-wrap{width:100%;height:240px}
+  .modal-meta{padding:16px}
+  .modal-body{padding:0 16px 16px}
+  .similar-section{padding:0 16px 16px}
+  .fetch-bar-wrap{flex-wrap:wrap;padding:10px 14px;gap:8px}
+  .fetch-status{min-width:0!important;white-space:normal}
+  .batch-bar{flex-wrap:wrap;padding:8px 12px;max-height:45vh;overflow-y:auto}
+  .stats-box,.heatmap-box{padding:18px}
+  .artist-bar-name{width:100px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
