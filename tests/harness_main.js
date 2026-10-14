@@ -1575,8 +1575,19 @@
       ok('Showroom on: remembered, button says so', document.body.classList.contains('showroom') && safeGet('cc_showroom') === '1' && /ON/.test($('showroomBtn').textContent));
       ok('ambient light takes the playing disc\'s colour', !!document.body.style.getPropertyValue('--amb'));
       ok('patina shows in Showroom', getComputedStyle(document.querySelector('#grid .slot[data-index="1"] .wear-loan')).display === 'flex');
+      const menuOnTop = () => {
+        window.scrollTo(0, 0); closeMoreMenu(); $('moreBtn').click();
+        const hits = [...$('moreMenu').querySelectorAll('button')].map(b => { const r = b.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; })
+          .filter(p => p.y > 0 && p.y < innerHeight && p.x > 0 && p.x < innerWidth)
+          .map(p => document.elementFromPoint(p.x, p.y));
+        closeMoreMenu();
+        return hits.length >= 3 && hits.every(el => el && el.closest('#moreMenu'));
+      };
+      ok('Showroom: the ☰ MORE menu is on top of the grid (clickable)', menuOnTop());
+      ok('Showroom: the header still sticks to the top', getComputedStyle(document.querySelector('header')).position === 'sticky');
       toggleShowroom(false);
       ok('Showroom off: ambient cleared', !document.body.classList.contains('showroom') && !document.body.style.getPropertyValue('--amb') && safeGet('cc_showroom') === '0');
+      ok('Showroom off: the ☰ MORE menu is on top of the grid too', menuOnTop());
 
       // ── listening room ──
       mbCache[keyOf(discs[4])] = { mbTried: true, v: 2, tracks: [{ num: 1, title: 'Track A', length: '3:00' }, { num: 2, title: 'Track B', length: '4:00' }], tags: [], artSources: [] };

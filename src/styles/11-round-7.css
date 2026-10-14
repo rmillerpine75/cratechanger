@@ -135,7 +135,10 @@ body.showroom .slot.wear-out .slot-art{opacity:.12;filter:grayscale(1)}
 body.showroom .slot.wear-out .wear-loan{display:flex;position:absolute;inset:16px 12px auto 12px;aspect-ratio:1/1;z-index:2;align-items:center;justify-content:center;text-align:center;
   border:2px dashed var(--accent);font-family:'Share Tech Mono',monospace;font-size:.58rem;letter-spacing:1px;color:var(--text);background:rgba(0,0,0,.25);pointer-events:none}
 body.showroom .slot.in-set{outline:1px solid rgba(212,160,23,.45);outline-offset:2px}
-body.showroom .grid,body.showroom header,body.showroom .toolbar{position:relative;z-index:1}
+/* lift the page above the ambient layer. The header is left alone: it is already sticky with z-index 200,
+   above everything (overriding it hid the ☰ MORE menu behind the grid and un-stuck the header) */
+body.showroom .toolbar{position:relative;z-index:20}
+body.showroom .grid-container{position:relative;z-index:1}
 
 /* ── calm mode for people who ask for less motion ── */
 @media (prefers-reduced-motion:reduce){
