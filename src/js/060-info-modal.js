@@ -47,6 +47,7 @@ function openInfoModal(i){
   } else pRow.innerHTML='NEVER PLAYED';
   renderNotesFor(i);
   renderValueFor(i);
+  $('playChangerBtn').style.display=webhookCfg().url?'':'none';
   if(m.addedAt)pRow.insertAdjacentHTML('beforeend',' · ADDED <span>'+escH(String(m.addedAt).slice(0,10))+'</span>');
 
   $('loadingPulse').style.display='';

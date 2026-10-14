@@ -84,6 +84,7 @@ function updateFilterUi(f,shown){
   $('filterCount').textContent=anyFilter(f)?`SHOWING ${shown} RESULTS`:'';
   const b=$('clearFiltersBtn');if(b)b.style.display=anyFilter(f)?'':'none';
   updateFilterToggleLabel(f);
+  renderFilterPills(f);
 }
 function clearAllFilters(){
   $('searchInput').value='';
@@ -150,6 +151,7 @@ function buildGrid(){
     const slot = document.createElement('div');
     slot.className = 'slot'+(isEmpty&&!isWish?' empty-slot':isWish?' wishlist-slot':'');
     slot.dataset.index = i;
+    if(setPos(i)){slot.classList.add('in-set');if(builtSort==='slot'){if(linkedWithNext(i))slot.classList.add('set-next');if(linkedWithPrev(i))slot.classList.add('set-prev')}}
 
     // Art (sources are wired after insertion; nothing is serialised into HTML attributes)
     const hasArt = slotArtSources(i).length>0;
@@ -163,7 +165,7 @@ function buildGrid(){
     let flagHtml='';
     if(isNP) flagHtml+=`<span class="flag flag-nowplaying">▶</span>`;
     if(flags.includes('broken'))    flagHtml+=`<span class="flag flag-broken">B</span>`;
-    if(flags.includes('loaned'))    flagHtml+=`<span class="flag flag-loaned">L</span>`;
+    if(flags.includes('loaned')){const ld=loanDays(m);flagHtml+=ld!==null&&ld>30?`<span class="flag flag-loaned overdue" title="On loan to ${escH(m.loanedTo||'?')} for ${ld} days">L!</span>`:`<span class="flag flag-loaned">L</span>`}
     if(flags.includes('replace'))   flagHtml+=`<span class="flag flag-replace">R</span>`;
     if(flags.includes('duplicate')) flagHtml+=`<span class="flag flag-duplicate">D</span>`;
 
@@ -175,7 +177,7 @@ function buildGrid(){
     const album  = disc?(disc[1]||'???'):'';
 
     slot.innerHTML=`
-      <div class="slot-num">${numPad}</div>
+      <div class="slot-num">${numPad}${setBadge(i)}</div>
       ${flagHtml?`<div class="slot-flags">${flagHtml}</div>`:''}
       ${artHtml}
       ${condDot}

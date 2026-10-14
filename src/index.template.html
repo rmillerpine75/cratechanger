@@ -3,6 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0a0a0c">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>CrateChanger — 200 Disc</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Share+Tech+Mono&family=Barlow:wght@300;400;600&display=swap" rel="stylesheet">
 <style>@@STYLES@@</style>
@@ -27,6 +31,8 @@
   <div class="header-right">
     <div class="stat-pill">LOADED <span id="loadedCount">0</span>/<span id="slotTotal">200</span></div>
     <div class="stat-pill wish-pill" id="wishPill" style="display:none" title="Wishlist items are not counted as loaded">♥ <span id="wishCount">0</span> WISHLIST</div>
+    <div class="stat-pill shelf-pill" id="shelfPill" style="display:none" role="button" tabindex="0" onclick="openShelf()" title="Discs taken out of the changer">📦 <span id="shelfCount">0</span> SHELF</div>
+    <div class="stat-pill sync-pill" id="syncPill" style="display:none" role="button" tabindex="0" onclick="syncNow(true)" title="Sync with GitHub now">☁ <span id="syncPillText">SYNCED</span></div>
     <button class="btn" onclick="pickRandom()">🎲 RANDOM</button>
     <button class="btn" id="fetchAllBtn" onclick="fetchAllArt()">⬇ FETCH ART</button>
     <button class="btn gold-btn" onclick="openStats()">📊 STATS</button>
@@ -40,6 +46,9 @@
         <button class="btn" onclick="openTimeline()">📅 TIMELINE</button>
         <button class="btn" onclick="openHeatmap()">🔥 HEATMAP</button>
         <button class="btn" onclick="openDataCheck()">🧹 DATA CHECK</button>
+        <button class="btn" onclick="openShelf()">📦 SHELF</button>
+        <button class="btn" onclick="openPrintModal()">🖨 PRINT BOOKLET</button>
+        <button class="btn" onclick="openSettings()">⚙ SETTINGS (SYNC, CHANGER)</button>
         <button class="btn" id="themeBtn" onclick="toggleTheme()">☀ LIGHT</button>
         <button class="btn" onclick="openHelp()" title="Keyboard shortcuts (?)">? SHORTCUTS</button>
       </div>
@@ -89,6 +98,7 @@
     <select class="filter-select" onchange="applyFilters()" id="originFilter" aria-label="Filter by band origin" style="display:none"><option value="">ALL ORIGINS</option></select>
     <button class="btn" id="clearFiltersBtn" onclick="clearAllFilters()" style="display:none">✕ CLEAR FILTERS</button>
   </div>
+  <div class="filter-pills" id="filterPills" style="display:none"></div>
 </div>
 
 <div class="grid-container">
@@ -130,7 +140,8 @@
         </div>
         <div>
           <div class="modal-actions">
-            <button class="btn-sm green" id="nowPlayingBtn" onclick="setNowPlaying()">▶ NOW PLAYING</button>
+            <button class="btn-sm green" id="playChangerBtn" onclick="playOnChanger()" style="display:none" title="Send this disc to the changer (Home Assistant)">▶ PLAY ON CHANGER</button>
+                        <button class="btn-sm green" id="nowPlayingBtn" onclick="setNowPlaying()">▶ NOW PLAYING</button>
             <button class="btn-sm" id="logPlayBtn" onclick="logPlay()">+ LOG PLAY</button>
             <button class="btn-sm gold" id="downloadArtBtn" onclick="downloadArt()" style="display:none">⬇ ART</button>
             <button class="btn-sm" id="refreshBtn" onclick="refreshCurrentDisc()" style="display:none">&#8635; REFRESH</button>
@@ -199,7 +210,8 @@
       <input type="text" id="loanedTo" placeholder="Loaned to...">
       <input type="date" id="loanDate">
     </div>
-    <label>ALBUM ART (overrides auto-fetched)</label>
+    <label class="check-row"><input type="checkbox" id="linkNext"> LINK WITH THE NEXT SLOT (MULTI-DISC SET — THEY MOVE AS ONE BLOCK)</label>
+        <label>ALBUM ART (overrides auto-fetched)</label>
     <div class="art-upload-row">
       <div class="art-upload-preview" id="artUploadPreview">
         <span id="artUploadPlaceholder">💿</span>
@@ -226,6 +238,7 @@
       <label>TRACKLIST (ONE TITLE PER LINE)</label>
       <textarea id="ovTracks" rows="5" placeholder="Track one&#10;Track two"></textarea>
     </details>
+    <button class="btn" type="button" id="shelveBtn" onclick="shelveCurrent()" style="margin-top:12px">📦 MOVE TO SHELF (KEEPS NOTES, PLAYS, ART)</button>
     <div class="edit-box-actions">
       <button class="btn-save" onclick="saveEdit()">SAVE</button>
       <button class="btn-cancel-edit" onclick="closeEditModal()">CANCEL</button>
@@ -321,6 +334,79 @@
   </div>
 </div>
 
+<!-- Shelf -->
+<div class="br-modal" id="shelfModal" role="dialog" aria-modal="true" aria-label="Shelf">
+  <div class="br-box wide">
+    <button class="modal-close" onclick="closeShelf()" aria-label="Close">✕</button>
+    <h3>📦 THE SHELF</h3>
+    <div class="br-last-backup" id="shelfSummary"></div>
+    <input type="search" class="shelf-search" id="shelfSearch" placeholder="Search the shelf…" aria-label="Search the shelf">
+    <div class="shelf-list" id="shelfList"></div>
+  </div>
+</div>
+
+<!-- Print booklet -->
+<div class="br-modal" id="printModal" role="dialog" aria-modal="true" aria-label="Print booklet">
+  <div class="br-box">
+    <button class="modal-close" onclick="closePrintModal()" aria-label="Close">✕</button>
+    <h3>🖨 PRINT BOOKLET</h3>
+    <div class="br-last-backup">The coffee-table binder — punch the slot number into the remote. Opens a print-ready page with your discs only (no notes, loans or wishlist).</div>
+    <div class="print-choices">
+      <button class="print-choice" type="button" onclick="printBooklet('index')"><b>COMPACT INDEX</b><span>Artist — Album ……… 042, A–Z in two columns. 200 discs on about 3 pages.</span></button>
+      <button class="print-choice" type="button" onclick="printBooklet('grid')"><b>COVER GRID</b><span>4 × 4 covers per page with big slot numbers, in slot order.</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings -->
+<div class="br-modal" id="settingsModal" role="dialog" aria-modal="true" aria-label="Settings">
+  <div class="br-box wide">
+    <button class="modal-close" onclick="closeSettings()" aria-label="Close">✕</button>
+    <h3>⚙ SETTINGS</h3>
+    <div class="br-section">
+      <p>☁ SYNC BETWEEN DEVICES — through a private GitHub Gist. Needs a GitHub token with <b>only</b> the Gists permission:
+      github.com → Settings → Developer settings → Fine-grained tokens → Generate new token → Account permissions → <b>Gists: Read and write</b> (nothing else). Paste it once on each device.</p>
+      <div class="br-last-backup" id="syncStatus"></div>
+      <div id="gistConnectRow" class="move-row" style="margin-top:8px"><input type="password" id="gistToken" placeholder="github_pat_…" autocomplete="off" spellcheck="false" aria-label="GitHub token"><button class="btn" id="gistConnectBtn" type="button" onclick="connectGist()">CONNECT</button></div>
+      <div id="gistLinkedRow" style="display:none;margin-top:4px">
+        <label class="check-row"><input type="checkbox" id="gistAuto" onchange="setGistAuto(this.checked)"> SYNC AUTOMATICALLY (WHEN OPENED, AND A FEW SECONDS AFTER EACH CHANGE)</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn gold-btn" type="button" onclick="syncNow(true)">☁ SYNC NOW</button><button class="btn" type="button" onclick="disconnectGist()">DISCONNECT</button></div>
+      </div>
+      <div class="attn-hint" style="margin-top:8px">The token stays in this browser only and is never put in backups or in the synced data. Every page on this address (…github.io) could read it, so don't host untrusted pages there.</div>
+    </div>
+    <div class="br-section">
+      <p>▶ PLAY ON CHANGER — a Home Assistant webhook. When it's set, a ▶ PLAY ON CHANGER button appears in the disc view.</p>
+      <label class="share-opt">WEBHOOK URL <input type="text" id="hookUrl" placeholder="https://xxxx.ui.nabu.casa/api/webhook/your-long-random-id" spellcheck="false"></label>
+      <label class="check-row"><input type="checkbox" id="hookMark" checked> ALSO MARK IT NOW PLAYING AND LOG A PLAY</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn gold-btn" type="button" onclick="saveWebhookSettings()">SAVE</button><button class="btn" type="button" onclick="testWebhook()">SEND TEST</button></div>
+      <details class="override-box"><summary>HOME ASSISTANT SET-UP (COPY AND ADAPT)</summary>
+<pre class="code">automation:
+  - alias: CrateChanger - play disc
+    triggers:
+      - trigger: webhook
+        webhook_id: your-long-random-id
+        allowed_methods: [POST]
+        local_only: false   # needed when you reach Home Assistant through Nabu Casa
+    conditions:
+      - "{{ (trigger.json.event if trigger.json is defined else trigger.data.event) == 'play' }}"
+    actions:
+      - variables:
+          slot: "{{ trigger.json.slot if trigger.json is defined else trigger.data.slot }}"
+      # replace with whatever drives your changer (IR blaster, ESPHome, S-Link bridge ...)
+      - action: remote.send_command
+        target: { entity_id: remote.living_room }
+        data: { device: cd_changer, command: "disc_{{ slot }}" }
+
+# optional - lets this page see Home Assistant's answer ("SENT ✓"):
+http:
+  cors_allowed_origins:
+    - <span id="hookOrigin">https://rmillerpine75.github.io</span></pre>
+        <div class="attn-hint">Sent fields: event (play / test), slot, slot_padded, artist, album. Without the CORS line the play command still goes through — the page just can't confirm it.</div>
+      </details>
+    </div>
+  </div>
+</div>
+
 <!-- Stats Modal -->
 <div class="stats-modal" id="statsModal" role="dialog" aria-modal="true" aria-label="Collection stats">
   <div class="stats-box">
@@ -373,7 +459,8 @@
         <button class="btn" onclick="openDataCheck()">🧹 DATA CHECK</button>
         <button class="btn" onclick="document.getElementById('discogsFileInput').click()" title="Discogs: Collection → Export">📥 IMPORT DISCOGS CSV</button>
         <input type="file" id="discogsFileInput" accept=".csv,text/csv" style="display:none" onchange="importDiscogsCsv(event)">
-        <button class="btn" onclick="openShare()">🌐 SHAREABLE PAGE</button>
+        <button class="btn" onclick="openPrintModal()">🖨 PRINT BOOKLET</button>
+                <button class="btn" onclick="openShare()">🌐 SHAREABLE PAGE</button>
       </div>
     </div>
     <div class="br-section">
@@ -425,6 +512,8 @@
 </div>
 
 <div class="undo-bar" id="undoBar" role="status" aria-live="polite"><span id="undoText"></span><button type="button" id="undoBtn" onclick="performUndo()" title="Ctrl+Z">↶ UNDO</button><button type="button" id="redoBtn" onclick="performRedo()" title="Ctrl+Shift+Z" style="display:none">↷ REDO</button><button type="button" class="undo-x" aria-label="Dismiss" onclick="dismissUndo()">✕</button></div>
+
+<div class="update-bar" id="updateBar" role="status"><span>A NEW VERSION OF CRATECHANGER IS READY</span><button type="button" onclick="applyUpdate()">RELOAD</button></div>
 
 <!-- Toast -->
 <div class="toast" id="toast"></div>

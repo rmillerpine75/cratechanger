@@ -60,6 +60,11 @@
       ok('live: Discogs price lookup completes', !!v);
       info('live: Discogs price for Absu - Tara', v && v.discogsId ? (v.lowest != null ? fmtMoney(v.lowest, v.currency) + ' lowest listing, ' + v.forSale + ' for sale (Discogs release ' + v.discogsId + ')' : 'no current listing (Discogs release ' + v.discogsId + ')') : 'no Discogs link for this edition on MusicBrainz');
     }
+    if (typeof loadZXing === 'function') {
+      // the browser refuses to run the file if it doesn't match the pinned sha384 - so this proves the hash is right
+      try { const Z = await loadZXing(); ok('live: camera-scan fallback (ZXing) loads and passes its integrity check', typeof Z.BrowserMultiFormatReader === 'function'); }
+      catch (e) { ok('live: camera-scan fallback (ZXing) loads and passes its integrity check', false, e.message); }
+    }
   } catch (e) { R.push('FAIL exception: ' + (e.stack || e)); }
   R.push('SUMMARY pass=' + R.filter(r => r.startsWith('PASS')).length + ' fail=' + R.filter(r => r.startsWith('FAIL')).length);
   document.body.insertAdjacentHTML('beforeend', '<pre id="__results">' + escH(R.join('\n')) + '</pre>');

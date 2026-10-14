@@ -90,7 +90,7 @@ function followUpLookups(data,artist,album,i,token){
 const UNDO_MAX=25;
 let undoStack=[],redoStack=[],undoTimer=null;
 function snapshot(){
-  return {discs:JSON.stringify(discs),meta:JSON.stringify(meta),np:JSON.stringify(nowPlaying),cache:JSON.stringify(mbCache),art:new Map(customArt)};
+  return {discs:JSON.stringify(discs),meta:JSON.stringify(meta),np:JSON.stringify(nowPlaying),cache:JSON.stringify(mbCache),art:new Map(customArt),shelf:JSON.stringify(shelf),shelfArt:new Map(shelfArt)};
 }
 function showUndoBar(){
   const top=undoStack[undoStack.length-1];
@@ -119,6 +119,7 @@ async function restoreSnapshot(snap){
   try{nowPlaying=JSON.parse(snap.np)}catch(e){nowPlaying=null}
   for(const k of [...customArt.keys()])if(!snap.art.has(k))await deleteCustomArt(k);
   for(const [k,v] of snap.art)if(customArt.get(k)!==v)await putCustomArt(k,v);
+  if(snap.shelf!==undefined){shelf=JSON.parse(snap.shelf);await syncShelfArt(snap.shelfArt||new Map());saveShelf()}
   if(nowPlaying)safeSet(NP_KEY,JSON.stringify(nowPlaying));else{try{localStorage.removeItem(NP_KEY)}catch(e){}}
   saveDiscs();saveMeta();saveMbCache();
   selectedSlots.clear();

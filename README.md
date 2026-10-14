@@ -7,6 +7,9 @@ Your collection lives in that browser's local storage. Use **💾 BACKUP** (expo
 The website and the local file keep **separate** collections (different storage); move data between them with BACKUP → EXPORT JSON / IMPORT JSON.
 Every push to `main` re-publishes the site, but only after all tests pass.
 
+On the website the app is **installable** (browser menu → Install / Add to Home Screen) and works **offline**.
+To use one collection on several devices, connect **⚙ Settings → Sync** (a private GitHub Gist; token with only the Gists permission).
+
 ## Layout
 
 ```

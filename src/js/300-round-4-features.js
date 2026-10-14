@@ -166,6 +166,7 @@ async function unlinkBackupFile(){
   toast('AUTO-BACKUP UNLINKED (THE FILE ITSELF IS LEFT AS IT IS)');
 }
 function scheduleAutoBackup(){
+  markSyncDirty();
   if(abState!=='ready')return;
   abDirty=true;clearTimeout(abTimer);abTimer=setTimeout(()=>abWrite(false),AB_DELAY);
 }
@@ -242,7 +243,10 @@ function computeResortPlan(key,compact){
     else r=art||alb;
     return r||a-b;
   };
-  const sorted=nonEmpty.slice().sort(cmp);
+  // multi-disc sets travel as one block, keeping their current order
+  const units=[];const bySet=new Map();
+  nonEmpty.forEach(i=>{const s=setPos(i)?setIdOf(i):null;if(s){if(bySet.has(s)){bySet.get(s).push(i);return}const u=[i];bySet.set(s,u);units.push(u)}else units.push([i])});
+  const sorted=units.slice().sort((u,v)=>cmp(u[0],v[0])).flat();
   const slots=compact?movable.slice():nonEmpty.slice();
   const want=compact?sorted.concat(empties):sorted;          // want[k] = the disc (original slot) that must end at slots[k]
   const content={},where={};

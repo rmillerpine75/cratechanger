@@ -25,6 +25,8 @@ function openEditModal(e,i){
   $('loanDate').value=m.loanDate||'';
   $('moveToSlot').value='';
   $('editBarcode').value=m.barcode||'';$('barcodeResults').innerHTML='';pendingPin=null;
+  $('linkNext').checked=linkedWithNext(i);$('linkNext').disabled=i>=discs.length-1;
+  $('shelveBtn').style.display=isSlotEmpty(disc)?'none':'';
   const ov=m.override||{};
   $('ovYear').value=ov.year||'';
   $('ovGenres').value=(ov.genres||[]).join(', ');
@@ -140,6 +142,7 @@ async function saveEdit(){
       if(ovTracks.length)ov.tracks=ovTracks;
       if(Object.keys(ov).length)m.override=ov;else delete m.override;
       const bc=$('editBarcode').value.replace(/\D/g,'');if(bc)m.barcode=bc;else delete m.barcode;
+      if($('linkNext').checked!==linkedWithNext(i))linkWithNext(i,$('linkNext').checked);
 
       // Art
       if(typeof pendingArtData==='string'){

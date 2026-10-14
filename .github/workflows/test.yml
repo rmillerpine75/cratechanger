@@ -26,8 +26,13 @@ jobs:
         env:
           CHROME_PATH: /usr/bin/google-chrome
           CHROME_FLAGS: --no-sandbox
+      - name: PWA (installable, offline, updates)
+        run: node tests/pwa-check.mjs
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+          CHROME_FLAGS: --no-sandbox
 
-  # Publishes dist/cratechanger.html to GitHub Pages - only from main, and only after every test passed.
+  # Publishes the app to GitHub Pages - only from main, and only after every test passed.
   deploy:
     needs: test
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
@@ -43,8 +48,11 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v7
-      - name: Prepare site (the app becomes index.html)
-        run: mkdir -p _site && cp dist/cratechanger.html _site/index.html
+      - name: Prepare site (the app becomes index.html, PWA files beside it)
+        run: |
+          mkdir -p _site
+          cp dist/cratechanger.html _site/index.html
+          cp dist/manifest.webmanifest dist/sw.js dist/icon-*.png _site/
       - uses: actions/upload-pages-artifact@v5
         with:
           path: _site

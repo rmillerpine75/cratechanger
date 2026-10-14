@@ -13,7 +13,7 @@ function openBackupModal(){
 function closeBrModal(){document.getElementById('brModal').classList.remove('open')}
 
 function buildBackupPayload(){
-  return {app:'CrateChanger',version:2,exportedAt:new Date().toISOString(),discs,meta,mbCache,artistCache,customArt:Object.fromEntries(customArt)};
+  return {app:'CrateChanger',version:2,exportedAt:new Date().toISOString(),discs,meta,mbCache,artistCache,customArt:Object.fromEntries(customArt),shelf,shelfArt:Object.fromEntries(shelfArt)};
 }
 
 function exportBackup(){
@@ -57,6 +57,7 @@ async function importBackup(ev){
     for(const m of Object.values(meta))if(m&&typeof m==='object')delete m.customArt;
     mbCache=newCache;
     if(data.artistCache&&typeof data.artistCache==='object'&&!Array.isArray(data.artistCache)){artistCache=data.artistCache;saveArtistCache()}
+    if(Array.isArray(data.shelf)){shelf=data.shelf.filter(x=>x&&Array.isArray(x.disc));await syncShelfArt(new Map(Object.entries((data.shelfArt&&typeof data.shelfArt==='object')?data.shelfArt:{}).filter(([,v])=>typeof v==='string'&&v.startsWith('data:image/'))));saveShelf()}
     await clearCustomArt();
     for(const [k,v] of art){
       let img=v;   // legacy v10 backups carry raw multi-MB uploads; already-small (resized) art is kept as-is to avoid generation loss

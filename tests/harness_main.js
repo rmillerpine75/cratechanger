@@ -1110,7 +1110,7 @@
       await saveEdit(); await wait(500);
       const bc = mbCache['Bc Band|Barcode Album'];
       ok('saving pins that exact edition and keeps the barcode', getMeta(bI).barcode === '3760053840156' && !!bc && bc.mbid === 'rel-bc' && bc.pinned === true && bc.tracks[0].title === 'Scanned Track');
-      ok('camera SCAN button only where the browser can scan barcodes', ('BarcodeDetector' in window) ? $('scanBtn').style.display !== 'none' : $('scanBtn').style.display === 'none');
+      ok('camera SCAN button shown wherever a camera API exists (native reader or the ZXing fallback)', (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) ? $('scanBtn').style.display !== 'none' : $('scanBtn').style.display === 'none');
       openEditModal(null, bI);
       ok('the edit dialog shows the stored barcode', $('editBarcode').value === '3760053840156' && pendingPin === null && $('barcodeResults').innerHTML === '');
       closeEditModal();
@@ -1168,6 +1168,284 @@
       ok('prices are reused for 30 days (no repeat lookups)', confirms.length === 0 && $('toast').textContent.includes('LESS THAN 30 DAYS') && calls.filter(c => c.includes('inc=url-rels')).length === nUrl);
       DG_SPACING = 2600;
       window.fetch = base5;
+    }
+    {   // ═══ 15. ROUND-6 ═══
+      const resetAll6 = async () => {
+        discs = INITIAL_DATA.map(normalizeDisc); while (discs.length < 200) discs.push(null);
+        meta = {}; mbCache = {}; artistCache = {}; valueCache = {}; await clearCustomArt(); nowPlaying = null; mbMode = 'ok';
+        shelf = []; await syncShelfArt(new Map()); saveShelf();
+        $('searchInput').value = ''; ['artistFilter', 'flagFilter', 'genreFilter', 'decadeFilter', 'originFilter'].forEach(id => { $(id).value = ''; });
+        $('sortSelect').value = 'slot'; clearUndoHistory();
+        buildGrid();
+      };
+      await resetAll6();
+      const slotEl = i => document.querySelector(`.slot[data-index="${i}"]`);
+
+      // ── MULTI-DISC SETS ──
+      const lb1 = idxOf('Cradle Of Filth', 'Live Bait For The Dead (Disc 1)'), lb2 = idxOf('Cradle Of Filth', 'Live Bait For The Dead (Disc 2)');
+      openEditModal(null, lb1);
+      ok('edit dialog offers "link with the next slot"', $('linkNext').checked === false && !$('linkNext').disabled);
+      $('linkNext').checked = true; await saveEdit();
+      ok('two neighbouring slots linked into a set', lb2 === lb1 + 1 && linkedWithNext(lb1) && linkedWithPrev(lb2) && setPos(lb2).n === 2 && setPos(lb2).of === 2);
+      ok('grid shows the connector and "⛓1/2" badges', slotEl(lb1).classList.contains('set-next') && slotEl(lb2).classList.contains('set-prev') && slotEl(lb1).querySelector('.set-badge').textContent === '⛓1/2');
+      openEditModal(null, lb1);
+      ok('the edit dialog remembers the link', $('linkNext').checked === true);
+      closeEditModal();
+      const owned0 = discs.filter((d, i) => !isSlotEmpty(d) && !isWish(i)).length;
+      ok('albums count a set once', albumCount() === owned0 - 1, albumCount() + ' vs ' + owned0);
+      openStats();
+      ok('stats: ALBUMS card and MULTI-DISC SETS section', $('statsContent').textContent.includes('ALBUMS (A SET = 1)') && $('statsContent').textContent.includes('MULTI-DISC SETS (1)'));
+      closeStats();
+      openHeatmap();
+      ok('heatmap shows the set', $('heatmapGrid').children[lb1].classList.contains('hm-set-next') && $('heatmapGrid').children[lb2].classList.contains('hm-set-prev'));
+      closeHeatmap();
+      linkWithNext(lb2, true);
+      ok('linking the next slot extends the set to 3 discs', setPos(lb1).of === 3 && setPos(lb2 + 1).n === 3);
+      linkWithNext(lb1, false);
+      ok('unlinking splits it; a lone disc is no longer a set', !setPos(lb1) && setPos(lb2).of === 2);
+      linkWithNext(lb2, false);
+      ok('unlinking the last pair removes the set', !setPos(lb2) && !setPos(lb2 + 1));
+      linkWithNext(lb1, true); saveMeta();
+      swapSlots(lb2, 150);
+      openStats();
+      ok('a set split across the changer is flagged "SPLIT UP"', $('statsContent').textContent.includes('SPLIT UP'));
+      closeStats();
+      const rp = computeResortPlan('artist', true);
+      const sim6 = discs.slice(); rp.steps.forEach(s => { [sim6[s.a], sim6[s.b]] = [sim6[s.b], sim6[s.a]]; });
+      const p1 = sim6.findIndex(d => d && d[1] === 'Live Bait For The Dead (Disc 1)'), p2 = sim6.findIndex(d => d && d[1] === 'Live Bait For The Dead (Disc 2)');
+      ok('the re-sort plan puts the set back together, in order', p2 === p1 + 1, p1 + ',' + p2);
+
+      // ── OVERDUE LOAN BADGE ──
+      await resetAll6();
+      getMeta(4).flags = ['loaned']; getMeta(4).loanedTo = 'Max'; getMeta(4).loanDate = new Date(Date.now() - 40 * 864e5).toISOString().slice(0, 10);
+      getMeta(5).flags = ['loaned']; getMeta(5).loanDate = new Date(Date.now() - 5 * 864e5).toISOString().slice(0, 10);
+      buildGrid();
+      const lo4 = slotEl(4).querySelector('.flag-loaned'), lo5 = slotEl(5).querySelector('.flag-loaned');
+      ok('a loan over 30 days gets a red "L!" badge on its tile', lo4.classList.contains('overdue') && lo4.textContent === 'L!' && /Max for 40 days/.test(lo4.title), lo4.title);
+      ok('a recent loan keeps the normal badge', !lo5.classList.contains('overdue') && lo5.textContent === 'L');
+
+      // ── ACTIVE-FILTER PILLS ──
+      await resetAll6();
+      ok('no pills while nothing is filtered', $('filterPills').style.display === 'none' && !$('filterPills').children.length);
+      getMeta(17).flags = ['broken'];
+      $('searchInput').value = 'cradle'; $('flagFilter').value = 'broken'; applyFilters();
+      const pillText = () => Array.from($('filterPills').querySelectorAll('.filter-pill')).map(b => b.textContent).join('|');
+      ok('one pill per active filter, plus RESET ALL', pillText() === 'SEARCH: cradle ✕|FLAG: BROKEN ✕|RESET ALL', pillText());
+      $('filterPills').querySelector('[data-clear-filter="flagFilter"]').click();
+      ok('✕ removes just that filter', $('flagFilter').value === '' && $('searchInput').value === 'cradle' && pillText() === 'SEARCH: cradle ✕|RESET ALL');
+      $('filterPills').querySelector('[data-clear-filter="*"]').click();
+      ok('RESET ALL clears everything', $('searchInput').value === '' && $('filterPills').style.display === 'none' && visible() === 200);
+
+      // ── THE SHELF ──
+      await resetAll6();
+      const sI = 10, sDisc = discs[sI].slice();
+      getMeta(sI).notes = 'shelf note'; getMeta(sI).playHistory = ['2025-01-01T00:00:00Z', '2025-02-01T00:00:00Z']; getMeta(sI).condition = 'good';
+      await putCustomArt(sI, PNG); saveMeta(); buildGrid();
+      openEditModal(null, sI);
+      ok('MOVE TO SHELF is offered for a filled slot', $('shelveBtn').style.display !== 'none');
+      await shelveCurrent();
+      const leftover = meta[sI] || {};
+      ok('shelving empties the slot (no notes, plays or condition left behind)', isSlotEmpty(discs[sI]) && !customArt.has(sI) && !leftover.notes && !(leftover.playHistory || []).length && !leftover.condition, JSON.stringify(meta[sI]));
+      ok('...keeping the disc with its notes, plays, condition and art', shelf.length === 1 && shelf[0].disc.join('|') === sDisc.join('|') && shelf[0].meta.notes === 'shelf note' && shelf[0].meta.playHistory.length === 2 && shelf[0].meta.condition === 'good' && shelfArt.get(shelf[0].id) === PNG && shelf[0].fromSlot === sI + 1);
+      ok('a SHELF pill appears in the header', $('shelfPill').style.display !== 'none' && $('shelfCount').textContent === '1');
+      ok('shelving is undoable', $('undoText').textContent.includes('SHELVED'));
+      ok('shelf art is stored in its own IndexedDB store', (await shelfArtStore.get(shelf[0].id)) === PNG);
+      openShelf();
+      ok('the shelf lists it with plays and where it came from', $('shelfList').textContent.includes(sDisc[1]) && $('shelfList').textContent.includes('2 PLAY(S)') && $('shelfList').textContent.includes('FROM SLOT ' + String(sI + 1).padStart(3, '0')));
+      $('shelfSearch').value = 'zzzz'; $('shelfSearch').dispatchEvent(new Event('input'));
+      ok('shelf search filters', $('shelfList').textContent.includes('NO MATCHES'));
+      $('shelfSearch').value = ''; $('shelfSearch').dispatchEvent(new Event('input'));
+      window.prompt = () => String(sI + 1);
+      $('shelfList').querySelector('[data-shelf-load]').click(); await wait(300);
+      ok('LOAD INTO SLOT puts it back with everything', JSON.stringify(discs[sI]) === JSON.stringify(sDisc) && getMeta(sI).notes === 'shelf note' && getMeta(sI).playHistory.length === 2 && customArt.get(sI) === PNG && shelf.length === 0 && shelfArt.size === 0);
+      closeShelf();
+      openEditModal(null, sI); await shelveCurrent();
+      const occ = discs[30].slice(); confirms.length = 0;
+      window.prompt = () => '31';
+      openShelf(); $('shelfList').querySelector('[data-shelf-load]').click(); await wait(300);
+      ok('loading into an occupied slot asks, then shelves the occupant', confirms.some(c => c.includes('goes onto the shelf')) && JSON.stringify(discs[30]) === JSON.stringify(sDisc) && shelf.length === 1 && shelf[0].disc.join('|') === occ.join('|'));
+      await performUndo();
+      ok('UNDO reverses it (disc, occupant, shelf, art)', JSON.stringify(discs[30]) === JSON.stringify(occ) && shelf.length === 1 && shelf[0].disc.join('|') === sDisc.join('|') && shelfArt.size === 1);
+      const oc6 = URL.createObjectURL, ock6 = HTMLAnchorElement.prototype.click; let blob6 = null;
+      URL.createObjectURL = b => { blob6 = b; return 'blob:x'; }; HTMLAnchorElement.prototype.click = function () {};
+      exportBackup();
+      const bk6 = JSON.parse(await blob6.text());
+      ok('backups include the shelf and its art', Array.isArray(bk6.shelf) && bk6.shelf.length === 1 && Object.values(bk6.shelfArt || {}).includes(PNG));
+      shelf = []; await syncShelfArt(new Map()); saveShelf();
+      await importBackup({ target: { files: [new File([JSON.stringify(bk6)], 'b.json')], value: '' } });
+      URL.createObjectURL = oc6; HTMLAnchorElement.prototype.click = ock6;
+      ok('restoring a backup brings the shelf back', shelf.length === 1 && shelfArt.size === 1);
+      confirms.length = 0;
+      openShelf(); $('shelfList').querySelector('[data-shelf-del]').click(); await wait(150);
+      ok('removing from the shelf asks first', confirms.some(c => c.includes('from the shelf for good')) && shelf.length === 0);
+      closeShelf();
+
+      // ── PRINT BOOKLET ──
+      await resetAll6();
+      discs[3] = ['<b>Evil</b> & Co', 'Album "X"'];
+      discs[5] = ['Wish Band', 'Wish Album Only']; getMeta(5).flags = ['wishlist'];
+      getMeta(6).notes = 'PRIVATE-NOTE';
+      await putCustomArt(1, PNG);
+      let written = ''; openRet = { document: { write: s => { written += s; }, close() {} } };
+      printBooklet('index');
+      const ownedP = discs.filter((d, i) => !isSlotEmpty(d) && !isWish(i)).length;
+      ok('compact index: every owned disc with its slot number, in two columns', (written.match(/class="r"/g) || []).length === ownedP && written.includes('column-count:2') && /<span class="s">\d{3}<\/span>/.test(written));
+      ok('compact index: A–Z ignoring "The", with letter headings', written.indexOf('Centinex') < written.indexOf('The Chasm') && written.indexOf('The Chasm') < written.indexOf('Cianide') && written.includes('<div class="L">A</div>'));
+      ok('compact index: titles escaped; no notes or wishlist', written.includes('&lt;b&gt;Evil&lt;/b&gt; &amp; Co') && !written.includes('PRIVATE-NOTE') && !written.includes('Wish Album Only'));
+      written = ''; printBooklet('grid');
+      ok('cover grid: 16 per page, slot order, slot numbers, custom art embedded', (written.match(/<section class="page">/g) || []).length === Math.ceil(ownedP / 16) && written.indexOf('>001<') < written.indexOf('>002<') && written.includes(PNG.slice(0, 50)));
+      ok('the booklet prints itself once its covers have loaded', written.includes('window.print()') && written.includes('document.images'));
+      openRet = null; printBooklet('index');
+      ok('a blocked popup is reported', $('toast').textContent.includes('POPUP BLOCKED'));
+
+      // ── PLAY ON CHANGER (webhook) ──
+      await resetAll6();
+      ok('an http webhook is refused on an https page (browsers block mixed content)', /blocks an http/.test(validWebhookUrl('http://homeassistant.local:8123/api/webhook/x', 'https:')));
+      ok('https accepted; http is fine from a local file', validWebhookUrl('https://abc.ui.nabu.casa/api/webhook/x', 'https:') === '' && validWebhookUrl('http://homeassistant.local:8123/api/webhook/x', 'file:') === '');
+      ok('a malformed URL is rejected', validWebhookUrl('not a url') !== '');
+      const hookCalls = []; let hookMode = 'cors-ok';
+      const base6 = window.fetch;
+      window.fetch = (url, o) => {
+        const u = String(url);
+        if (u.startsWith('https://ha.example/')) {
+          hookCalls.push({ u, o });
+          if (hookMode === 'cors-ok') return Promise.resolve({ ok: true, status: 200, json: async () => ({}) });
+          if (hookMode === 'cors-blocked') return (o && o.mode === 'no-cors') ? Promise.resolve({ ok: false, status: 0, type: 'opaque' }) : Promise.reject(new TypeError('Failed to fetch'));
+          return Promise.reject(new TypeError('Failed to fetch'));
+        }
+        return base6(url, o);
+      };
+      const pI = idxOf('Absu', 'Tara');
+      openInfoModal(pI); await wait(150);
+      ok('no PLAY ON CHANGER button until a webhook is set', $('playChangerBtn').style.display === 'none');
+      closeModal();
+      openSettings(); $('hookUrl').value = 'https://ha.example/api/webhook/abc'; $('hookMark').checked = true; saveWebhookSettings(); closeSettings();
+      openInfoModal(pI); await wait(150);
+      ok('▶ PLAY ON CHANGER appears once a webhook is set', $('playChangerBtn').style.display !== 'none');
+      await playOnChanger();
+      const sent = JSON.parse(hookCalls[0].o.body);
+      ok('play sends event, slot, artist and album as JSON', hookCalls[0].o.headers['Content-Type'] === 'application/json' && sent.event === 'play' && sent.slot === pI + 1 && sent.slot_padded === slotNum(pI) && sent.artist === 'Absu' && sent.album === 'Tara');
+      ok('a confirmed send also marks NOW PLAYING and logs a play', $('toast').textContent.includes('SENT TO THE CHANGER ✓') && !!nowPlaying && nowPlaying.index === pI && getMeta(pI).playHistory.length === 1);
+      hookMode = 'cors-blocked'; hookCalls.length = 0;
+      await playOnChanger();
+      ok('without CORS it falls back to a plain form post Home Assistant understands', hookCalls.length === 2 && hookCalls[1].o.mode === 'no-cors' && /slot=\d+/.test(hookCalls[1].o.body) && /artist=Absu/.test(hookCalls[1].o.body) && $('toast').textContent.includes('NO CONFIRMATION'));
+      hookMode = 'down'; hookCalls.length = 0;
+      await playOnChanger();
+      ok('an unreachable changer is reported, nothing is marked', $('toast').textContent.includes('COULD NOT REACH') && getMeta(pI).playHistory.length === 2);
+      hookMode = 'cors-ok';
+      safeSet(HOOK_KEY, JSON.stringify({ url: 'https://ha.example/api/webhook/abc', markPlaying: false }));
+      await playOnChanger();
+      ok('"also mark now playing" can be switched off', getMeta(pI).playHistory.length === 2);
+      hookCalls.length = 0;
+      openSettings(); await testWebhook(); closeSettings();
+      ok('SEND TEST sends a harmless "test" event', hookCalls.length === 1 && JSON.parse(hookCalls[0].o.body).event === 'test' && JSON.parse(hookCalls[0].o.body).slot === 0);
+      closeModal();
+      safeSet(HOOK_KEY, JSON.stringify({ url: '', markPlaying: true }));
+      window.fetch = base6;
+
+      // ── SYNC (GitHub Gist) ──
+      await resetAll6();
+      const TOKEN = 'github_pat_TESTTOKEN_abcdefghijklmnopqrstuvwxyz';
+      const G = { gists: {}, n: 0, truncate: false };
+      const gview = g => ({ id: g.id, description: g.description, updated_at: g.updated_at, history: g.history, files: Object.fromEntries(Object.entries(g.files).map(([f, v]) => [f, G.truncate && v.content.length > 60 ? { filename: f, truncated: true, raw_url: `https://gist.githubusercontent.com/raw/${g.id}/${f}`, content: v.content.slice(0, 60) } : { filename: f, truncated: false, content: v.content }])) });
+      const gbump = g => { G.n++; g.updated_at = new Date(Date.UTC(2026, 0, 1) + G.n * 1000).toISOString(); g.history = [{ version: 'v' + G.n }]; };
+      const base7 = window.fetch; const ghCalls = [];
+      window.fetch = (url, o) => {
+        const u = String(url);
+        if (u.startsWith('https://api.github.com/')) {
+          const m = (o && o.method) || 'GET'; ghCalls.push({ u, m });
+          if ((o && o.headers && o.headers.Authorization) !== 'Bearer ' + TOKEN) return reply({ message: 'Bad credentials' }, 401);
+          const p = u.slice('https://api.github.com'.length);
+          if (p === '/user') return reply({ login: 'tester' });
+          if (p.startsWith('/gists?')) return reply(Object.values(G.gists).map(gview));
+          if (p === '/gists' && m === 'POST') { const b = JSON.parse(o.body); const g = { id: 'gid' + (G.n + 1), description: b.description, files: {} }; for (const [f, v] of Object.entries(b.files)) g.files[f] = { content: v.content }; gbump(g); G.gists[g.id] = g; G.lastPostPublic = b.public; return reply(gview(g), 201); }
+          const mm = /^\/gists\/([^/?]+)$/.exec(p);
+          if (mm) { const g = G.gists[mm[1]]; if (!g) return reply({ message: 'Not Found' }, 404); if (m === 'PATCH') { const b = JSON.parse(o.body); for (const [f, v] of Object.entries(b.files)) g.files[f] = { content: v.content }; gbump(g); } return reply(gview(g)); }
+          return reply({ message: 'Not Found' }, 404);
+        }
+        if (u.startsWith('https://gist.githubusercontent.com/raw/')) { const mm = /raw\/([^/]+)\/(.+)$/.exec(u); const c = G.gists[mm[1]].files[mm[2]].content; return Promise.resolve({ ok: true, status: 200, text: async () => c }); }
+        return base7(url, o);
+      };
+      const remoteData = gid => JSON.parse(G.gists[gid].files[GIST_DATA].content);
+      const editRemote = (gid, fn) => { const d = remoteData(gid); fn(d); G.gists[gid].files[GIST_DATA].content = JSON.stringify(d); gbump(G.gists[gid]); };
+      GIST_DELAY = 50;
+      openSettings();
+      $('gistToken').value = 'nope'; const al0 = alerts.length; await connectGist();
+      ok('a malformed token is refused before anything is sent', alerts.length === al0 + 1 && ghCalls.length === 0);
+      $('gistToken').value = 'github_pat_WRONGTOKEN_abcdefghijklmnopqrst'; await connectGist();
+      ok('a rejected token is reported and nothing is stored', alerts.some(a => /rejected the token/.test(a)) && !gistCfg());
+      getMeta(3).notes = 'synced note'; saveMeta();
+      $('gistToken').value = TOKEN; await connectGist();
+      const gid = Object.keys(G.gists)[0];
+      ok('first connect creates a PRIVATE gist holding the collection', !!gid && G.lastPostPublic === false && G.gists[gid].description === GIST_DESC && remoteData(gid).meta[3].notes === 'synced note');
+      ok('cover art goes in its own file; the token is never uploaded', 'customArt' in JSON.parse(G.gists[gid].files[GIST_ART].content) && !G.gists[gid].files[GIST_DATA].content.includes(TOKEN) && !G.gists[gid].files[GIST_ART].content.includes(TOKEN));
+      ok('token field cleared; status shows the account', $('gistToken').value === '' && $('syncStatus').textContent.includes('TESTER') && $('syncPill').style.display !== 'none');
+      getMeta(4).notes = 'second note'; saveMeta();
+      ok('a change marks the sync as pending', syncDirty() && $('syncPillText').textContent === 'PENDING');
+      await wait(500);
+      ok('...and it is uploaded a moment later', !syncDirty() && remoteData(gid).meta[4].notes === 'second note');
+      editRemote(gid, d => { d.discs[0] = ['Other Device', 'New Disc']; });
+      await syncNow(true);
+      ok('changes from another device are pulled in', discs[0][0] === 'Other Device' && !syncDirty());
+      ok('pulling is undoable', $('undoText').textContent.includes('SYNCED FROM GITHUB'));
+      GIST_DELAY = 999999;
+      editRemote(gid, d => { d.discs[1] = ['Remote', 'Edit']; });
+      discs[2] = ['Local', 'Edit']; saveDiscs();
+      confirms.length = 0;
+      await syncNow(true);
+      ok('conflict: asks which version to keep', confirms.some(c => c.startsWith('SYNC CONFLICT')));
+      ok('OK keeps this device and uploads it', remoteData(gid).discs[2][0] === 'Local' && remoteData(gid).discs[1][0] !== 'Remote' && discs[1][0] !== 'Remote');
+      editRemote(gid, d => { d.discs[1] = ['Remote', 'Edit 2']; });
+      discs[2] = ['Local', 'Edit 2']; saveDiscs();
+      const keepConfirm = window.confirm; window.confirm = m => { confirms.push(String(m)); return false; };
+      await syncNow(true);
+      window.confirm = keepConfirm;
+      ok('Cancel takes the version from GitHub (undoable)', discs[1][1] === 'Edit 2' && discs[2][1] === 'Edit' && $('undoText').textContent.includes('SYNCED FROM GITHUB'));
+      editRemote(gid, d => { d.discs[1] = ['Remote', 'Edit 3']; });
+      discs[2] = ['Local', 'Edit 3']; saveDiscs();
+      await syncNow(false);
+      ok('automatic sync never overwrites either side on a conflict', discs[1][1] === 'Edit 2' && remoteData(gid).discs[2][1] === 'Edit' && $('syncPillText').textContent === 'CONFLICT' && /CONFLICT/.test($('toast').textContent));
+      await syncNow(true);
+      ok('resolving the conflict clears it', $('syncPillText').textContent === 'SYNCED' && remoteData(gid).discs[2][1] === 'Edit 3');
+      G.truncate = true;
+      editRemote(gid, d => { d.discs[3] = ['Big', 'File']; });
+      await syncNow(true);
+      G.truncate = false;
+      ok('large gist files (truncated by the API) are fetched in full', discs[3][0] === 'Big');
+      disconnectGist();
+      ok('DISCONNECT forgets the token', !gistCfg() && $('syncPill').style.display === 'none');
+      discs[0] = ['Fresh', 'Device']; saveDiscs();
+      confirms.length = 0;
+      $('gistToken').value = TOKEN; await connectGist();
+      ok('a second device finds the existing gist and offers to load it', confirms.some(c => c.startsWith('Found existing CrateChanger sync data')) && Object.keys(G.gists).length === 1 && gistCfg().gistId === gid && discs[0][0] === 'Other Device');
+      closeSettings();
+      ok('exported backups never contain the token', !JSON.stringify(buildBackupPayload()).includes(TOKEN));
+      setGistCfg(null); try { localStorage.removeItem(GIST_DIRTY_KEY); } catch (e) {}
+      GIST_DELAY = 15000; window.fetch = base7; renderSyncStatus();
+
+      // ── BACK BUTTON + #slot links ──
+      await resetAll6(); await wait(200);
+      openStats(); await wait(80);
+      ok('opening a window adds a history entry', !!history.state && history.state.cc === 'layer' && history.state.id === 'statsModal');
+      history.back(); await wait(350);
+      ok('Back closes the window', !$('statsModal').classList.contains('open'));
+      openInfoModal(3); await wait(150);
+      ok('the disc view puts #slot-004 in the address', location.hash === '#slot-004');
+      openEditModal(null, 3); await wait(80);
+      history.back(); await wait(350);
+      ok('Back closes only the top window', !$('editModal').classList.contains('open') && $('infoModal').classList.contains('open'));
+      closeModal(); await wait(80);
+      ok('closing with ✕ clears the address without navigating', location.hash === '' && !!history.state && history.state.cc === 'dead');
+      const hl = history.length;
+      openHeatmap(); await wait(80);
+      ok('the next window reuses that entry (history does not pile up)', history.length === hl && history.state.id === 'heatmapModal');
+      closeHeatmap(); await wait(80);
+      ok('a #slot-012 link opens that disc', openFromHash('#slot-012') === true && $('infoModal').classList.contains('open') && currentModalIndex === 11);
+      closeModal(); await wait(80);
+      ok('a #slot link to a slot that does not exist does nothing', openFromHash('#slot-999') === false);
+
+      // ── camera fallback is pinned ──
+      ok('ZXing fallback is pinned to a version with an integrity hash', /@zxing\/browser@0\.2\.1\//.test(ZXING_URL) && /^sha384-[A-Za-z0-9+/]{64}$/.test(ZXING_SRI));
     }
   } catch (e) {
     R.push('FAIL harness exception: ' + (e && e.stack || e));

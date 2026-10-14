@@ -3,6 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0a0a0c">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>CrateChanger — 200 Disc</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Share+Tech+Mono&family=Barlow:wght@300;400;600&display=swap" rel="stylesheet">
 <style>
@@ -440,6 +444,46 @@ kbd{font-family:'Share Tech Mono',monospace;font-size:.62rem;border:1px solid va
 .scan-overlay video{max-width:92vw;max-height:70vh;border:2px solid var(--gold)}
 .undo-bar #redoBtn{border-color:var(--border);color:var(--text)}
 @media (max-width:760px){.more-menu{right:auto;left:0}}
+
+/* ───────── round-6 additions ───────── */
+.slot.set-next{border-right-color:var(--gold)}
+.slot.set-prev{border-left-color:var(--gold)}
+.slot.set-next::after{content:'';position:absolute;top:44%;right:-10px;width:10px;height:3px;background:var(--gold);z-index:3;pointer-events:none}
+.set-badge{margin-left:5px;color:var(--gold);letter-spacing:0}
+.hm-cell.hm-set-next{border-right:2px solid var(--gold)}
+.hm-cell.hm-set-prev{border-left:2px solid var(--gold)}
+.flag-loaned.overdue{background:var(--accent);color:#fff}
+.filter-pills{display:flex;flex-basis:100%;flex-wrap:wrap;gap:6px;padding-top:8px}
+.filter-pill{font-family:'Share Tech Mono',monospace;font-size:.58rem;letter-spacing:1px;padding:4px 9px;border:1px solid var(--accent);background:rgba(200,41,46,.12);color:var(--text);cursor:pointer}
+.filter-pill:hover,.filter-pill:focus-visible{background:var(--accent);color:#fff}
+.filter-pill.reset{border-color:var(--border);background:transparent;color:var(--muted)}
+.shelf-pill,.sync-pill{cursor:pointer}
+.shelf-pill span{color:var(--gold)}
+.sync-pill span{color:var(--green)}
+.sync-pill.warn span{color:var(--accent)}
+.shelf-search{width:100%;margin:10px 0;padding:8px 10px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'Barlow',sans-serif;font-size:.88rem}
+.shelf-list{display:flex;flex-direction:column;gap:6px;max-height:58vh;overflow-y:auto;scrollbar-color:var(--border) var(--surface)}
+.shelf-item{display:flex;gap:10px;align-items:center;padding:6px;background:var(--surface2);border:1px solid var(--border)}
+.shelf-art{width:52px;height:52px;flex-shrink:0;background:var(--surface3);display:flex;align-items:center;justify-content:center;font-size:1.4rem;overflow:hidden}
+.shelf-art img{width:100%;height:100%;object-fit:cover}
+.shelf-info{flex:1;min-width:0}
+.shelf-artist{font-family:'Share Tech Mono',monospace;font-size:.58rem;color:var(--accent);letter-spacing:1px;text-transform:uppercase}
+.shelf-album{font-size:.85rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.shelf-meta{font-family:'Share Tech Mono',monospace;font-size:.52rem;color:var(--muted);margin-top:2px}
+.shelf-actions{display:flex;gap:6px;flex-shrink:0}
+.check-row{display:flex;gap:8px;align-items:center;font-family:'Share Tech Mono',monospace;font-size:.6rem;letter-spacing:1px;color:var(--muted);margin-top:12px;cursor:pointer;text-transform:uppercase}
+.print-choices{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.print-choice{display:flex;flex-direction:column;gap:6px;text-align:left;padding:14px;background:var(--surface2);border:1px solid var(--border);color:var(--text);cursor:pointer;font-family:inherit}
+.print-choice:hover,.print-choice:focus-visible{border-color:var(--gold)}
+.print-choice b{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:2px;color:var(--gold);font-weight:normal}
+.print-choice span{font-size:.75rem;color:var(--muted);line-height:1.4}
+pre.code{background:var(--surface2);border:1px solid var(--border);padding:10px;font-size:.62rem;line-height:1.45;overflow-x:auto;color:var(--text);white-space:pre;margin-top:8px}
+.update-bar{position:fixed;left:50%;transform:translateX(-50%);top:12px;z-index:9600;display:none;gap:12px;align-items:center;background:var(--surface2);border:1px solid var(--green);padding:8px 12px;font-family:'Share Tech Mono',monospace;font-size:.62rem;letter-spacing:1px;color:var(--text)}
+.update-bar.visible{display:flex}
+.update-bar button{font-family:inherit;font-size:.62rem;padding:5px 10px;border:1px solid var(--green);background:transparent;color:var(--green);cursor:pointer}
+@media (max-width:760px){.print-choices{grid-template-columns:1fr}}
+#gistToken{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:8px 10px;font-family:'Share Tech Mono',monospace;font-size:.75rem;min-width:0}
+#gistToken:focus{outline:none;border-color:var(--gold)}
 </style>
 </head>
 <body>
@@ -462,6 +506,8 @@ kbd{font-family:'Share Tech Mono',monospace;font-size:.62rem;border:1px solid va
   <div class="header-right">
     <div class="stat-pill">LOADED <span id="loadedCount">0</span>/<span id="slotTotal">200</span></div>
     <div class="stat-pill wish-pill" id="wishPill" style="display:none" title="Wishlist items are not counted as loaded">♥ <span id="wishCount">0</span> WISHLIST</div>
+    <div class="stat-pill shelf-pill" id="shelfPill" style="display:none" role="button" tabindex="0" onclick="openShelf()" title="Discs taken out of the changer">📦 <span id="shelfCount">0</span> SHELF</div>
+    <div class="stat-pill sync-pill" id="syncPill" style="display:none" role="button" tabindex="0" onclick="syncNow(true)" title="Sync with GitHub now">☁ <span id="syncPillText">SYNCED</span></div>
     <button class="btn" onclick="pickRandom()">🎲 RANDOM</button>
     <button class="btn" id="fetchAllBtn" onclick="fetchAllArt()">⬇ FETCH ART</button>
     <button class="btn gold-btn" onclick="openStats()">📊 STATS</button>
@@ -475,6 +521,9 @@ kbd{font-family:'Share Tech Mono',monospace;font-size:.62rem;border:1px solid va
         <button class="btn" onclick="openTimeline()">📅 TIMELINE</button>
         <button class="btn" onclick="openHeatmap()">🔥 HEATMAP</button>
         <button class="btn" onclick="openDataCheck()">🧹 DATA CHECK</button>
+        <button class="btn" onclick="openShelf()">📦 SHELF</button>
+        <button class="btn" onclick="openPrintModal()">🖨 PRINT BOOKLET</button>
+        <button class="btn" onclick="openSettings()">⚙ SETTINGS (SYNC, CHANGER)</button>
         <button class="btn" id="themeBtn" onclick="toggleTheme()">☀ LIGHT</button>
         <button class="btn" onclick="openHelp()" title="Keyboard shortcuts (?)">? SHORTCUTS</button>
       </div>
@@ -524,6 +573,7 @@ kbd{font-family:'Share Tech Mono',monospace;font-size:.62rem;border:1px solid va
     <select class="filter-select" onchange="applyFilters()" id="originFilter" aria-label="Filter by band origin" style="display:none"><option value="">ALL ORIGINS</option></select>
     <button class="btn" id="clearFiltersBtn" onclick="clearAllFilters()" style="display:none">✕ CLEAR FILTERS</button>
   </div>
+  <div class="filter-pills" id="filterPills" style="display:none"></div>
 </div>
 
 <div class="grid-container">
@@ -565,7 +615,8 @@ kbd{font-family:'Share Tech Mono',monospace;font-size:.62rem;border:1px solid va
         </div>
         <div>
           <div class="modal-actions">
-            <button class="btn-sm green" id="nowPlayingBtn" onclick="setNowPlaying()">▶ NOW PLAYING</button>
+            <button class="btn-sm green" id="playChangerBtn" onclick="playOnChanger()" style="display:none" title="Send this disc to the changer (Home Assistant)">▶ PLAY ON CHANGER</button>
+                        <button class="btn-sm green" id="nowPlayingBtn" onclick="setNowPlaying()">▶ NOW PLAYING</button>
             <button class="btn-sm" id="logPlayBtn" onclick="logPlay()">+ LOG PLAY</button>
             <button class="btn-sm gold" id="downloadArtBtn" onclick="downloadArt()" style="display:none">⬇ ART</button>
             <button class="btn-sm" id="refreshBtn" onclick="refreshCurrentDisc()" style="display:none">&#8635; REFRESH</button>
@@ -634,7 +685,8 @@ kbd{font-family:'Share Tech Mono',monospace;font-size:.62rem;border:1px solid va
       <input type="text" id="loanedTo" placeholder="Loaned to...">
       <input type="date" id="loanDate">
     </div>
-    <label>ALBUM ART (overrides auto-fetched)</label>
+    <label class="check-row"><input type="checkbox" id="linkNext"> LINK WITH THE NEXT SLOT (MULTI-DISC SET — THEY MOVE AS ONE BLOCK)</label>
+        <label>ALBUM ART (overrides auto-fetched)</label>
     <div class="art-upload-row">
       <div class="art-upload-preview" id="artUploadPreview">
         <span id="artUploadPlaceholder">💿</span>
@@ -661,6 +713,7 @@ kbd{font-family:'Share Tech Mono',monospace;font-size:.62rem;border:1px solid va
       <label>TRACKLIST (ONE TITLE PER LINE)</label>
       <textarea id="ovTracks" rows="5" placeholder="Track one&#10;Track two"></textarea>
     </details>
+    <button class="btn" type="button" id="shelveBtn" onclick="shelveCurrent()" style="margin-top:12px">📦 MOVE TO SHELF (KEEPS NOTES, PLAYS, ART)</button>
     <div class="edit-box-actions">
       <button class="btn-save" onclick="saveEdit()">SAVE</button>
       <button class="btn-cancel-edit" onclick="closeEditModal()">CANCEL</button>
@@ -756,6 +809,79 @@ kbd{font-family:'Share Tech Mono',monospace;font-size:.62rem;border:1px solid va
   </div>
 </div>
 
+<!-- Shelf -->
+<div class="br-modal" id="shelfModal" role="dialog" aria-modal="true" aria-label="Shelf">
+  <div class="br-box wide">
+    <button class="modal-close" onclick="closeShelf()" aria-label="Close">✕</button>
+    <h3>📦 THE SHELF</h3>
+    <div class="br-last-backup" id="shelfSummary"></div>
+    <input type="search" class="shelf-search" id="shelfSearch" placeholder="Search the shelf…" aria-label="Search the shelf">
+    <div class="shelf-list" id="shelfList"></div>
+  </div>
+</div>
+
+<!-- Print booklet -->
+<div class="br-modal" id="printModal" role="dialog" aria-modal="true" aria-label="Print booklet">
+  <div class="br-box">
+    <button class="modal-close" onclick="closePrintModal()" aria-label="Close">✕</button>
+    <h3>🖨 PRINT BOOKLET</h3>
+    <div class="br-last-backup">The coffee-table binder — punch the slot number into the remote. Opens a print-ready page with your discs only (no notes, loans or wishlist).</div>
+    <div class="print-choices">
+      <button class="print-choice" type="button" onclick="printBooklet('index')"><b>COMPACT INDEX</b><span>Artist — Album ……… 042, A–Z in two columns. 200 discs on about 3 pages.</span></button>
+      <button class="print-choice" type="button" onclick="printBooklet('grid')"><b>COVER GRID</b><span>4 × 4 covers per page with big slot numbers, in slot order.</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings -->
+<div class="br-modal" id="settingsModal" role="dialog" aria-modal="true" aria-label="Settings">
+  <div class="br-box wide">
+    <button class="modal-close" onclick="closeSettings()" aria-label="Close">✕</button>
+    <h3>⚙ SETTINGS</h3>
+    <div class="br-section">
+      <p>☁ SYNC BETWEEN DEVICES — through a private GitHub Gist. Needs a GitHub token with <b>only</b> the Gists permission:
+      github.com → Settings → Developer settings → Fine-grained tokens → Generate new token → Account permissions → <b>Gists: Read and write</b> (nothing else). Paste it once on each device.</p>
+      <div class="br-last-backup" id="syncStatus"></div>
+      <div id="gistConnectRow" class="move-row" style="margin-top:8px"><input type="password" id="gistToken" placeholder="github_pat_…" autocomplete="off" spellcheck="false" aria-label="GitHub token"><button class="btn" id="gistConnectBtn" type="button" onclick="connectGist()">CONNECT</button></div>
+      <div id="gistLinkedRow" style="display:none;margin-top:4px">
+        <label class="check-row"><input type="checkbox" id="gistAuto" onchange="setGistAuto(this.checked)"> SYNC AUTOMATICALLY (WHEN OPENED, AND A FEW SECONDS AFTER EACH CHANGE)</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn gold-btn" type="button" onclick="syncNow(true)">☁ SYNC NOW</button><button class="btn" type="button" onclick="disconnectGist()">DISCONNECT</button></div>
+      </div>
+      <div class="attn-hint" style="margin-top:8px">The token stays in this browser only and is never put in backups or in the synced data. Every page on this address (…github.io) could read it, so don't host untrusted pages there.</div>
+    </div>
+    <div class="br-section">
+      <p>▶ PLAY ON CHANGER — a Home Assistant webhook. When it's set, a ▶ PLAY ON CHANGER button appears in the disc view.</p>
+      <label class="share-opt">WEBHOOK URL <input type="text" id="hookUrl" placeholder="https://xxxx.ui.nabu.casa/api/webhook/your-long-random-id" spellcheck="false"></label>
+      <label class="check-row"><input type="checkbox" id="hookMark" checked> ALSO MARK IT NOW PLAYING AND LOG A PLAY</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn gold-btn" type="button" onclick="saveWebhookSettings()">SAVE</button><button class="btn" type="button" onclick="testWebhook()">SEND TEST</button></div>
+      <details class="override-box"><summary>HOME ASSISTANT SET-UP (COPY AND ADAPT)</summary>
+<pre class="code">automation:
+  - alias: CrateChanger - play disc
+    triggers:
+      - trigger: webhook
+        webhook_id: your-long-random-id
+        allowed_methods: [POST]
+        local_only: false   # needed when you reach Home Assistant through Nabu Casa
+    conditions:
+      - "{{ (trigger.json.event if trigger.json is defined else trigger.data.event) == 'play' }}"
+    actions:
+      - variables:
+          slot: "{{ trigger.json.slot if trigger.json is defined else trigger.data.slot }}"
+      # replace with whatever drives your changer (IR blaster, ESPHome, S-Link bridge ...)
+      - action: remote.send_command
+        target: { entity_id: remote.living_room }
+        data: { device: cd_changer, command: "disc_{{ slot }}" }
+
+# optional - lets this page see Home Assistant's answer ("SENT ✓"):
+http:
+  cors_allowed_origins:
+    - <span id="hookOrigin">https://rmillerpine75.github.io</span></pre>
+        <div class="attn-hint">Sent fields: event (play / test), slot, slot_padded, artist, album. Without the CORS line the play command still goes through — the page just can't confirm it.</div>
+      </details>
+    </div>
+  </div>
+</div>
+
 <!-- Stats Modal -->
 <div class="stats-modal" id="statsModal" role="dialog" aria-modal="true" aria-label="Collection stats">
   <div class="stats-box">
@@ -808,7 +934,8 @@ kbd{font-family:'Share Tech Mono',monospace;font-size:.62rem;border:1px solid va
         <button class="btn" onclick="openDataCheck()">🧹 DATA CHECK</button>
         <button class="btn" onclick="document.getElementById('discogsFileInput').click()" title="Discogs: Collection → Export">📥 IMPORT DISCOGS CSV</button>
         <input type="file" id="discogsFileInput" accept=".csv,text/csv" style="display:none" onchange="importDiscogsCsv(event)">
-        <button class="btn" onclick="openShare()">🌐 SHAREABLE PAGE</button>
+        <button class="btn" onclick="openPrintModal()">🖨 PRINT BOOKLET</button>
+                <button class="btn" onclick="openShare()">🌐 SHAREABLE PAGE</button>
       </div>
     </div>
     <div class="br-section">
@@ -860,6 +987,8 @@ kbd{font-family:'Share Tech Mono',monospace;font-size:.62rem;border:1px solid va
 </div>
 
 <div class="undo-bar" id="undoBar" role="status" aria-live="polite"><span id="undoText"></span><button type="button" id="undoBtn" onclick="performUndo()" title="Ctrl+Z">↶ UNDO</button><button type="button" id="redoBtn" onclick="performRedo()" title="Ctrl+Shift+Z" style="display:none">↷ REDO</button><button type="button" class="undo-x" aria-label="Dismiss" onclick="dismissUndo()">✕</button></div>
+
+<div class="update-bar" id="updateBar" role="status"><span>A NEW VERSION OF CRATECHANGER IS READY</span><button type="button" onclick="applyUpdate()">RELOAD</button></div>
 
 <!-- Toast -->
 <div class="toast" id="toast"></div>
@@ -1300,6 +1429,7 @@ function updateFilterUi(f,shown){
   $('filterCount').textContent=anyFilter(f)?`SHOWING ${shown} RESULTS`:'';
   const b=$('clearFiltersBtn');if(b)b.style.display=anyFilter(f)?'':'none';
   updateFilterToggleLabel(f);
+  renderFilterPills(f);
 }
 function clearAllFilters(){
   $('searchInput').value='';
@@ -1366,6 +1496,7 @@ function buildGrid(){
     const slot = document.createElement('div');
     slot.className = 'slot'+(isEmpty&&!isWish?' empty-slot':isWish?' wishlist-slot':'');
     slot.dataset.index = i;
+    if(setPos(i)){slot.classList.add('in-set');if(builtSort==='slot'){if(linkedWithNext(i))slot.classList.add('set-next');if(linkedWithPrev(i))slot.classList.add('set-prev')}}
 
     // Art (sources are wired after insertion; nothing is serialised into HTML attributes)
     const hasArt = slotArtSources(i).length>0;
@@ -1379,7 +1510,7 @@ function buildGrid(){
     let flagHtml='';
     if(isNP) flagHtml+=`<span class="flag flag-nowplaying">▶</span>`;
     if(flags.includes('broken'))    flagHtml+=`<span class="flag flag-broken">B</span>`;
-    if(flags.includes('loaned'))    flagHtml+=`<span class="flag flag-loaned">L</span>`;
+    if(flags.includes('loaned')){const ld=loanDays(m);flagHtml+=ld!==null&&ld>30?`<span class="flag flag-loaned overdue" title="On loan to ${escH(m.loanedTo||'?')} for ${ld} days">L!</span>`:`<span class="flag flag-loaned">L</span>`}
     if(flags.includes('replace'))   flagHtml+=`<span class="flag flag-replace">R</span>`;
     if(flags.includes('duplicate')) flagHtml+=`<span class="flag flag-duplicate">D</span>`;
 
@@ -1391,7 +1522,7 @@ function buildGrid(){
     const album  = disc?(disc[1]||'???'):'';
 
     slot.innerHTML=`
-      <div class="slot-num">${numPad}</div>
+      <div class="slot-num">${numPad}${setBadge(i)}</div>
       ${flagHtml?`<div class="slot-flags">${flagHtml}</div>`:''}
       ${artHtml}
       ${condDot}
@@ -1539,6 +1670,8 @@ function openEditModal(e,i){
   $('loanDate').value=m.loanDate||'';
   $('moveToSlot').value='';
   $('editBarcode').value=m.barcode||'';$('barcodeResults').innerHTML='';pendingPin=null;
+  $('linkNext').checked=linkedWithNext(i);$('linkNext').disabled=i>=discs.length-1;
+  $('shelveBtn').style.display=isSlotEmpty(disc)?'none':'';
   const ov=m.override||{};
   $('ovYear').value=ov.year||'';
   $('ovGenres').value=(ov.genres||[]).join(', ');
@@ -1654,6 +1787,7 @@ async function saveEdit(){
       if(ovTracks.length)ov.tracks=ovTracks;
       if(Object.keys(ov).length)m.override=ov;else delete m.override;
       const bc=$('editBarcode').value.replace(/\D/g,'');if(bc)m.barcode=bc;else delete m.barcode;
+      if($('linkNext').checked!==linkedWithNext(i))linkWithNext(i,$('linkNext').checked);
 
       // Art
       if(typeof pendingArtData==='string'){
@@ -1727,6 +1861,7 @@ function openInfoModal(i){
   } else pRow.innerHTML='NEVER PLAYED';
   renderNotesFor(i);
   renderValueFor(i);
+  $('playChangerBtn').style.display=webhookCfg().url?'':'none';
   if(m.addedAt)pRow.insertAdjacentHTML('beforeend',' · ADDED <span>'+escH(String(m.addedAt).slice(0,10))+'</span>');
 
   $('loadingPulse').style.display='';
@@ -2112,6 +2247,8 @@ function renderBaseStats(){
       <div class="stat-card"><div class="val">${flagCounts.loaned}</div><div class="lbl">LOANED OUT</div></div>
       <div class="stat-card"><div class="val">${flagCounts.replace}</div><div class="lbl">NEED REPLACE</div></div>
       <div class="stat-card"><div class="val">${totalPlays}</div><div class="lbl">TOTAL PLAYS</div></div>
+      <div class="stat-card"><div class="val">${albumCount()}</div><div class="lbl">ALBUMS (A SET = 1)</div></div>
+      <div class="stat-card"><div class="val">${shelf.length}</div><div class="lbl">📦 ON THE SHELF</div></div>
       <div class="stat-card"><div class="val">${wishCount}</div><div class="lbl">♥ WISHLIST</div></div>
     </div>
     <div class="stats-section">
@@ -2175,7 +2312,7 @@ function openBackupModal(){
 function closeBrModal(){document.getElementById('brModal').classList.remove('open')}
 
 function buildBackupPayload(){
-  return {app:'CrateChanger',version:2,exportedAt:new Date().toISOString(),discs,meta,mbCache,artistCache,customArt:Object.fromEntries(customArt)};
+  return {app:'CrateChanger',version:2,exportedAt:new Date().toISOString(),discs,meta,mbCache,artistCache,customArt:Object.fromEntries(customArt),shelf,shelfArt:Object.fromEntries(shelfArt)};
 }
 
 function exportBackup(){
@@ -2219,6 +2356,7 @@ async function importBackup(ev){
     for(const m of Object.values(meta))if(m&&typeof m==='object')delete m.customArt;
     mbCache=newCache;
     if(data.artistCache&&typeof data.artistCache==='object'&&!Array.isArray(data.artistCache)){artistCache=data.artistCache;saveArtistCache()}
+    if(Array.isArray(data.shelf)){shelf=data.shelf.filter(x=>x&&Array.isArray(x.disc));await syncShelfArt(new Map(Object.entries((data.shelfArt&&typeof data.shelfArt==='object')?data.shelfArt:{}).filter(([,v])=>typeof v==='string'&&v.startsWith('data:image/'))));saveShelf()}
     await clearCustomArt();
     for(const [k,v] of art){
       let img=v;   // legacy v10 backups carry raw multi-MB uploads; already-small (resized) art is kept as-is to avoid generation loss
@@ -2581,6 +2719,9 @@ const MODAL_LAYERS=[
   ['editModal',()=>closeEditModal()],
   ['editionModal',()=>closeEdition()],
   ['dataCheckModal',()=>closeDataCheck()],
+  ['settingsModal',()=>closeSettings()],
+  ['shelfModal',()=>closeShelf()],
+  ['printModal',()=>closePrintModal()],
   ['brModal',()=>closeBrModal()],
   ['resortModal',()=>closeResort()],
   ['shareModal',()=>closeShare()],
@@ -2697,6 +2838,8 @@ function openHeatmap(){
     const flags = m.flags||[];
     const cell = document.createElement('div');
     cell.className='hm-cell';
+    if(linkedWithNext(i))cell.className+=' hm-set-next';
+    if(linkedWithPrev(i))cell.className+=' hm-set-prev';
     if(flags.includes('wishlist')) cell.className+=' hm-wishlist';
     else if(!d||isSlotEmpty(d)) cell.className+=' hm-empty';
     else if(flags.includes('broken')) cell.className+=' hm-broken';
@@ -2919,6 +3062,7 @@ function openStats(){
     html.push(`<div class="stats-section"><h3>NEGLECTED (${neglected.length})</h3><div class="attn-hint">${neglected.length-never} NOT PLAYED IN OVER A YEAR · ${never} NEVER PLAYED · OLDEST FIRST</div>${rows}${neglected.length>12?`<div class="attn-hint">…and ${neglected.length-12} more</div>`:''}<button class="btn" style="margin-top:8px" type="button" data-pick-neglected="1">🎲 PICK A NEGLECTED DISC</button></div>`);
   }
 
+  html.push(setsSectionHtml());
   html.push(valueSectionHtml());
   html.push(growthSectionHtml());
 
@@ -3037,7 +3181,7 @@ function followUpLookups(data,artist,album,i,token){
 const UNDO_MAX=25;
 let undoStack=[],redoStack=[],undoTimer=null;
 function snapshot(){
-  return {discs:JSON.stringify(discs),meta:JSON.stringify(meta),np:JSON.stringify(nowPlaying),cache:JSON.stringify(mbCache),art:new Map(customArt)};
+  return {discs:JSON.stringify(discs),meta:JSON.stringify(meta),np:JSON.stringify(nowPlaying),cache:JSON.stringify(mbCache),art:new Map(customArt),shelf:JSON.stringify(shelf),shelfArt:new Map(shelfArt)};
 }
 function showUndoBar(){
   const top=undoStack[undoStack.length-1];
@@ -3066,6 +3210,7 @@ async function restoreSnapshot(snap){
   try{nowPlaying=JSON.parse(snap.np)}catch(e){nowPlaying=null}
   for(const k of [...customArt.keys()])if(!snap.art.has(k))await deleteCustomArt(k);
   for(const [k,v] of snap.art)if(customArt.get(k)!==v)await putCustomArt(k,v);
+  if(snap.shelf!==undefined){shelf=JSON.parse(snap.shelf);await syncShelfArt(snap.shelfArt||new Map());saveShelf()}
   if(nowPlaying)safeSet(NP_KEY,JSON.stringify(nowPlaying));else{try{localStorage.removeItem(NP_KEY)}catch(e){}}
   saveDiscs();saveMeta();saveMbCache();
   selectedSlots.clear();
@@ -3423,6 +3568,7 @@ async function unlinkBackupFile(){
   toast('AUTO-BACKUP UNLINKED (THE FILE ITSELF IS LEFT AS IT IS)');
 }
 function scheduleAutoBackup(){
+  markSyncDirty();
   if(abState!=='ready')return;
   abDirty=true;clearTimeout(abTimer);abTimer=setTimeout(()=>abWrite(false),AB_DELAY);
 }
@@ -3499,7 +3645,10 @@ function computeResortPlan(key,compact){
     else r=art||alb;
     return r||a-b;
   };
-  const sorted=nonEmpty.slice().sort(cmp);
+  // multi-disc sets travel as one block, keeping their current order
+  const units=[];const bySet=new Map();
+  nonEmpty.forEach(i=>{const s=setPos(i)?setIdOf(i):null;if(s){if(bySet.has(s)){bySet.get(s).push(i);return}const u=[i];bySet.set(s,u);units.push(u)}else units.push([i])});
+  const sorted=units.slice().sort((u,v)=>cmp(u[0],v[0])).flat();
   const slots=compact?movable.slice():nonEmpty.slice();
   const want=compact?sorted.concat(empties):sorted;          // want[k] = the disc (original slot) that must end at slots[k]
   const content={},where={};
@@ -3813,26 +3962,44 @@ $('barcodeResults').addEventListener('click',e=>{
   $('barcodeResults').querySelectorAll('.edition-row').forEach(r=>r.classList.toggle('current',r===b));
   toast('FILLED FROM THE BARCODE — SAVE TO KEEP (THAT EDITION WILL BE PINNED)',4000);
 });
-if('BarcodeDetector' in window&&navigator.mediaDevices&&navigator.mediaDevices.getUserMedia){const sb=$('scanBtn');if(sb)sb.style.display=''}
+if(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia){const sb=$('scanBtn');if(sb)sb.style.display=''}   // native reader, or the ZXing fallback
 async function scanBarcode(){
-  let stream=null,overlay=null,stop=false;
-  const finish=()=>{stop=true;if(stream)stream.getTracks().forEach(t=>t.stop());if(overlay)overlay.remove()};
+  // native BarcodeDetector where the browser has one (Chrome on Android/macOS), otherwise the pinned ZXing library
+  let stream=null,controls=null,stop=false,settle=null;
+  const overlay=document.createElement('div');overlay.className='scan-overlay';
+  overlay.innerHTML='<video playsinline muted></video><div class="br-last-backup scan-status">STARTING THE CAMERA…</div><button class="btn" type="button">CANCEL</button>';
+  document.body.appendChild(overlay);
+  const video=overlay.querySelector('video');
+  const status=t=>{const s=overlay.querySelector('.scan-status');if(s)s.textContent=t};
+  const finish=()=>{
+    if(stop)return;stop=true;
+    try{controls&&controls.stop()}catch(e){}
+    if(stream)stream.getTracks().forEach(t=>t.stop());
+    overlay.remove();if(settle)settle();
+  };
+  const found=code=>{if(stop)return;$('editBarcode').value=String(code).replace(/\D/g,'');finish();lookupBarcode()};
+  overlay.querySelector('button').onclick=finish;
+  const timeout=new Promise(r=>{settle=r;setTimeout(r,30000)});
   try{
-    const det=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e']});
-    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
-    overlay=document.createElement('div');overlay.className='scan-overlay';
-    overlay.innerHTML='<video playsinline muted></video><div class="br-last-backup">POINT THE CAMERA AT THE BARCODE</div><button class="btn" type="button">CANCEL</button>';
-    document.body.appendChild(overlay);
-    overlay.querySelector('button').onclick=finish;
-    const video=overlay.querySelector('video');video.srcObject=stream;await video.play();
-    const t0=Date.now();
-    while(!stop&&Date.now()-t0<30000){
-      const codes=await det.detect(video).catch(()=>[]);
-      if(codes&&codes.length){$('editBarcode').value=codes[0].rawValue;finish();lookupBarcode();return}
-      await new Promise(r=>setTimeout(r,250));
+    if('BarcodeDetector' in window){
+      const det=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e']});
+      stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+      if(stop)return;
+      video.srcObject=stream;await video.play();status('POINT THE CAMERA AT THE BARCODE');
+      const loop=(async()=>{while(!stop){const codes=await det.detect(video).catch(()=>[]);if(codes&&codes.length){found(codes[0].rawValue);return}await new Promise(r=>setTimeout(r,250))}})();
+      await Promise.race([loop,timeout]);
+    }else{
+      status('LOADING THE SCANNER…');
+      const Z=await loadZXing();
+      if(stop)return;
+      const reader=new Z.BrowserMultiFormatReader();
+      controls=await reader.decodeFromConstraints({video:{facingMode:'environment'}},video,result=>{if(result)found(result.getText())});
+      if(stop){try{controls.stop()}catch(e){}return}
+      status('POINT THE CAMERA AT THE BARCODE');
+      await timeout;
     }
     if(!stop)toast('NO BARCODE FOUND — TYPE IT IN INSTEAD',4000);
-  }catch(e){toast('CAMERA NOT AVAILABLE: '+((e&&e.message)||e),4000)}
+  }catch(e){if(!stop)toast('CAMERA NOT AVAILABLE: '+((e&&e.message)||e),4000)}
   finally{finish()}
 }
 
@@ -4030,6 +4197,567 @@ function updateFilterToggleLabel(f){
   b.classList.toggle('active',n>0);
 }
 
+
+// ════════════════════════════════════════════════════════════════
+// ROUND-6 FEATURES
+// ════════════════════════════════════════════════════════════════
+
+// ── tiny IndexedDB key-value store (one database per use) ──
+function kvStore(dbName){
+  let dbp=null;
+  const open=()=>dbp||(dbp=new Promise(res=>{
+    try{const r=indexedDB.open(dbName,1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>res(r.result);r.onerror=()=>res(null);r.onblocked=()=>res(null)}
+    catch(e){res(null)}
+  }));
+  const tx=async(mode,fn)=>{
+    const db=await open();if(!db)throw new Error('IndexedDB unavailable');
+    return new Promise((res,rej)=>{const t=db.transaction('kv',mode);const r=fn(t.objectStore('kv'));t.oncomplete=()=>res(r&&r.result);t.onerror=t.onabort=()=>rej(t.error||new Error('idb'))});
+  };
+  return {
+    get:k=>tx('readonly',s=>s.get(k)),
+    set:(k,v)=>tx('readwrite',s=>s.put(v,k)),
+    del:k=>tx('readwrite',s=>s.delete(k)),
+    all:async()=>{
+      const db=await open();if(!db)return new Map();
+      return new Promise(res=>{const m=new Map();const t=db.transaction('kv','readonly');const q=t.objectStore('kv').openCursor();
+        q.onsuccess=()=>{const c=q.result;if(c){m.set(String(c.key),c.value);c.continue()}};t.oncomplete=()=>res(m);t.onerror=t.onabort=()=>res(m)});
+    }
+  };
+}
+
+// ── MULTI-DISC SETS: slots that belong together (double albums, box sets) ──
+const setIdOf=i=>{const m=meta[i];return (m&&typeof m.setId==='string'&&m.setId)||null};
+function setMembers(id){return id?discs.map((_,i)=>i).filter(i=>setIdOf(i)===id):[]}
+function linkedWithNext(i){const a=setIdOf(i);return !!a&&i+1<discs.length&&setIdOf(i+1)===a}
+function linkedWithPrev(i){return i>0&&linkedWithNext(i-1)}
+function setPos(i){
+  const id=setIdOf(i);if(!id)return null;
+  const mem=setMembers(id);if(mem.length<2)return null;
+  return {n:mem.indexOf(i)+1,of:mem.length,members:mem};
+}
+const newSetId=()=>'set-'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+// a "set" of one is not a set
+function normalizeSets(){
+  const count={};
+  Object.values(meta).forEach(m=>{if(m&&m.setId)count[m.setId]=(count[m.setId]||0)+1});
+  Object.values(meta).forEach(m=>{if(m&&m.setId&&count[m.setId]<2)delete m.setId});
+}
+function linkWithNext(i,on){
+  if(i<0||i+1>=discs.length)return;
+  const a=getMeta(i),b=getMeta(i+1);
+  if(on){
+    const id=a.setId||b.setId||newSetId();
+    [a.setId,b.setId].filter(s=>s&&s!==id).forEach(old=>setMembers(old).forEach(j=>{getMeta(j).setId=id}));
+    a.setId=id;b.setId=id;
+  }else if(a.setId&&a.setId===b.setId){
+    const tail=newSetId();
+    for(let j=i+1;j<discs.length&&setIdOf(j)===a.setId;j++)getMeta(j).setId=tail;
+  }
+  normalizeSets();
+}
+function setBadge(i){const p=setPos(i);return p?`<span class="set-badge" title="Disc ${p.n} of ${p.of} of a multi-disc set">⛓${p.n}/${p.of}</span>`:''}
+// albums = owned discs, with each multi-disc set counted once
+function albumCount(){
+  let n=0;const seen=new Set();
+  discs.forEach((d,i)=>{
+    if(isSlotEmpty(d)||isWish(i))return;
+    const s=setPos(i)?setIdOf(i):null;
+    if(s){if(seen.has(s))return;seen.add(s)}
+    n++;
+  });
+  return n;
+}
+function setsSectionHtml(){
+  const sets=new Map();
+  discs.forEach((d,i)=>{const p=setPos(i);if(!p||isSlotEmpty(d))return;const id=setIdOf(i);if(!sets.has(id))sets.set(id,p.members)});
+  if(!sets.size)return '';
+  const rows=[...sets.values()].map(mem=>{
+    const d=discs[mem[0]];const together=mem.every((j,k)=>k===0||j===mem[k-1]+1);
+    return `<div class="attn-row${together?'':' overdue'}" data-open-slot="${mem[0]}" title="Open disc"><span class="attn-num">${slotNum(mem[0])}</span><span class="attn-title">${escH(d[0])} — ${escH(d[1])}</span><span class="attn-meta">${mem.length} DISCS · SLOTS ${mem.map(slotNum).join(', ')}${together?'':' · SPLIT UP'}</span></div>`;
+  }).join('');
+  return `<div class="stats-section"><h3>MULTI-DISC SETS (${sets.size})</h3><div class="attn-hint">EACH SET COUNTS AS ONE ALBUM. A SET NO LONGER IN NEIGHBOURING SLOTS SHOWS “SPLIT UP” — THE RE-SORT PLAN PUTS IT BACK TOGETHER.</div>${rows}</div>`;
+}
+
+// ── THE SHELF: discs taken out of the changer, kept with their notes / plays / art ──
+const SHELF_KEY='cc_shelf_v1';
+const shelfArtStore=kvStore('cc_shelf_art');
+let shelf=(()=>{try{const s=JSON.parse(safeGet(SHELF_KEY));return Array.isArray(s)?s.filter(x=>x&&Array.isArray(x.disc)):[]}catch(e){return []}})();
+let shelfArt=new Map();
+function saveShelf(){const ok=safeSet(SHELF_KEY,JSON.stringify(shelf));scheduleAutoBackup();renderShelfPill();return ok}
+async function syncShelfArt(target){   // make the stored shelf art equal to `target` (Map id -> data URL)
+  for(const k of [...shelfArt.keys()])if(!target.has(k)){shelfArt.delete(k);try{await shelfArtStore.del(k)}catch(e){}}
+  for(const [k,v] of target)if(shelfArt.get(k)!==v){shelfArt.set(k,v);try{await shelfArtStore.set(k,v)}catch(e){}}
+}
+function renderShelfPill(){const p=$('shelfPill');if(!p)return;$('shelfCount').textContent=shelf.length;p.style.display=shelf.length?'':'none'}
+async function shelveSlot(i){
+  const d=discs[i];if(isSlotEmpty(d))return false;
+  const id='sh-'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+  const m=meta[i]?JSON.parse(JSON.stringify(meta[i])):{};
+  delete m.setId;                                    // a shelved disc leaves its set
+  shelf.unshift({id,disc:[d[0],d[1]],meta:m,shelvedAt:new Date().toISOString(),fromSlot:i+1});
+  if(customArt.has(i)){const a=customArt.get(i);shelfArt.set(id,a);try{await shelfArtStore.set(id,a)}catch(e){}await deleteCustomArt(i)}
+  discs[i]=null;delete meta[i];
+  if(nowPlaying&&nowPlaying.index===i){nowPlaying=null;try{localStorage.removeItem(NP_KEY)}catch(e){}}
+  normalizeSets();
+  return true;
+}
+async function shelveCurrent(){
+  if(editingIndex===null)return;
+  const i=editingIndex;
+  if(isSlotEmpty(discs[i])){toast('THIS SLOT IS EMPTY');return}
+  const snap=snapshot();
+  const label=discs[i][0]+' — '+discs[i][1];
+  closeEditModal();
+  await shelveSlot(i);
+  saveDiscs();saveMeta();saveShelf();buildGrid();
+  toast('📦 ON THE SHELF: '+label,4000);
+  offerUndo('SHELVED DISC '+slotNum(i),snap);
+}
+const firstFreeSlot=()=>discs.findIndex((d,j)=>isSlotEmpty(d)&&!isWish(j));
+async function loadFromShelf(id,target){
+  const item=shelf.find(x=>x.id===id);if(!item)return;
+  if(!Number.isInteger(target)||target<0||target>=discs.length){toast('ENTER A SLOT NUMBER FROM 1 TO '+discs.length,4000);return}
+  if(isWish(target)){toast('SLOT '+slotNum(target)+' HOLDS A WISHLIST ENTRY — PICK ANOTHER SLOT',4000);return}
+  const occupied=!isSlotEmpty(discs[target]);
+  if(occupied&&!confirm(`Slot ${slotNum(target)} holds ${discs[target][0]} — ${discs[target][1]}.\nIt goes onto the shelf in its place (its notes, plays and art are kept).`))return;
+  const snap=snapshot();
+  if(occupied)await shelveSlot(target);
+  shelf=shelf.filter(x=>x.id!==id);
+  discs[target]=[item.disc[0],item.disc[1]];
+  meta[target]=(item.meta&&typeof item.meta==='object')?item.meta:{};
+  const art=shelfArt.get(id);
+  if(art){await putCustomArt(target,art);shelfArt.delete(id);try{await shelfArtStore.del(id)}catch(e){}}
+  saveDiscs();saveMeta();saveShelf();buildGrid();
+  if($('shelfModal').classList.contains('open'))renderShelf();
+  offerUndo('LOADED FROM SHELF INTO '+slotNum(target),snap);
+  toast('LOADED INTO SLOT '+slotNum(target)+' ✓',3500);
+}
+async function deleteFromShelf(id){
+  const item=shelf.find(x=>x.id===id);if(!item)return;
+  if(!confirm(`Remove “${item.disc[0]} — ${item.disc[1]}” from the shelf for good?\nIts notes and play history go with it. (You can UNDO right after.)`))return;
+  const snap=snapshot();
+  shelf=shelf.filter(x=>x.id!==id);
+  if(shelfArt.has(id)){shelfArt.delete(id);try{await shelfArtStore.del(id)}catch(e){}}
+  saveShelf();renderShelf();
+  offerUndo('REMOVED FROM SHELF',snap);
+}
+function openShelf(){$('shelfSearch').value='';renderShelf();$('shelfModal').classList.add('open')}
+function closeShelf(){$('shelfModal').classList.remove('open')}
+function renderShelf(){
+  const q=$('shelfSearch').value.trim().toLowerCase();
+  const list=shelf.filter(x=>!q||(x.disc[0]+' '+x.disc[1]+' '+((x.meta&&x.meta.notes)||'')).toLowerCase().includes(q));
+  const empties=discs.filter((d,i)=>isSlotEmpty(d)&&!isWish(i)).length;
+  $('shelfSummary').textContent=shelf.length
+    ?`${shelf.length} DISC(S) ON THE SHELF · ${empties} EMPTY SLOT(S) IN THE CHANGER`
+    :'THE SHELF IS EMPTY. IN A DISC’S EDIT DIALOG, “MOVE TO SHELF” TAKES IT OUT OF ITS SLOT WITHOUT LOSING ITS NOTES, PLAYS OR ART.';
+  $('shelfList').innerHTML=list.map(x=>{
+    const m=x.meta||{};const plays=(m.playHistory||[]).length;
+    const art=shelfArt.get(x.id)||autoSources(mbCache[x.disc[0]+'|'+x.disc[1]])[0]||'';
+    return `<div class="shelf-item"><div class="shelf-art">${art?`<img alt="" loading="lazy" src="${escH(art)}">`:'💿'}</div>`+
+      `<div class="shelf-info"><div class="shelf-artist">${escH(x.disc[0])}</div><div class="shelf-album">${escH(x.disc[1])}</div>`+
+      `<div class="shelf-meta">${plays} PLAY(S)${m.condition?' · '+escH(String(m.condition).toUpperCase()):''}${m.notes?' · HAS NOTES':''} · SHELVED ${escH(String(x.shelvedAt||'').slice(0,10))}${x.fromSlot?' FROM SLOT '+String(x.fromSlot).padStart(3,'0'):''}</div></div>`+
+      `<div class="shelf-actions"><button class="btn-sm gold" type="button" data-shelf-load="${escH(x.id)}">⇢ LOAD INTO SLOT…</button><button class="btn-sm" type="button" data-shelf-del="${escH(x.id)}" aria-label="Remove from shelf">✕</button></div></div>`;
+  }).join('')||(shelf.length?'<div class="no-results">NO MATCHES</div>':'');
+  $('shelfList').querySelectorAll('img').forEach(img=>{img.onerror=()=>{img.replaceWith(document.createTextNode('💿'))}});
+}
+$('shelfList').addEventListener('click',e=>{
+  const l=e.target.closest('[data-shelf-load]');
+  if(l){
+    const free=firstFreeSlot();
+    const ans=prompt(`Load into which slot (1–${discs.length})?`+(free>=0?`\nFirst empty slot: ${free+1}`:'\nThe changer is full: the disc in that slot goes onto the shelf.'),free>=0?String(free+1):'');
+    if(ans===null)return;
+    loadFromShelf(l.dataset.shelfLoad,parseInt(String(ans).replace(/^#/,''),10)-1);
+    return;
+  }
+  const d=e.target.closest('[data-shelf-del]');if(d)deleteFromShelf(d.dataset.shelfDel);
+});
+$('shelfSearch').addEventListener('input',renderShelf);
+window.addEventListener('storage',e=>{
+  if(e.key!==SHELF_KEY)return;
+  try{const s=JSON.parse(e.newValue);shelf=Array.isArray(s)?s:[]}catch(err){shelf=[]}
+  shelfArtStore.all().then(m=>{shelfArt=m;renderShelfPill();if($('shelfModal').classList.contains('open'))renderShelf()});
+});
+
+// ── ACTIVE-FILTER PILLS: why only 14 discs are showing, one tap to undo each ──
+function renderFilterPills(f){
+  const el=$('filterPills');if(!el)return;
+  const pills=[];
+  if(f.q)pills.push(['search','SEARCH: '+f.q]);
+  if(f.artist)pills.push(['artistFilter','ARTIST: '+f.artist]);
+  if(f.flag)pills.push(['flagFilter','FLAG: '+f.flag.toUpperCase()]);
+  if(f.genre)pills.push(['genreFilter','GENRE: '+f.genre.toUpperCase()]);
+  if(f.decade)pills.push(['decadeFilter','DECADE: '+f.decade]);
+  if(f.country)pills.push(['originFilter','ORIGIN: '+countryName(f.country).toUpperCase()]);
+  el.innerHTML=pills.length
+    ?pills.map(([k,label])=>`<button class="filter-pill" type="button" data-clear-filter="${k}" title="Remove this filter">${escH(label)} ✕</button>`).join('')+'<button class="filter-pill reset" type="button" data-clear-filter="*">RESET ALL</button>'
+    :'';
+  el.style.display=pills.length?'':'none';
+}
+$('filterPills').addEventListener('click',e=>{
+  const b=e.target.closest('[data-clear-filter]');if(!b)return;
+  const k=b.dataset.clearFilter;
+  if(k==='*'){clearAllFilters();return}
+  if(k==='search')$('searchInput').value='';else $(k).value='';
+  applyFilters();
+});
+
+// ── PRINT BOOKLET: the coffee-table binder (compact A–Z index, or 4×4 cover grid per page) ──
+function openPrintModal(){closeBrModal();$('printModal').classList.add('open')}
+function closePrintModal(){$('printModal').classList.remove('open')}
+function bookletHtml(kind){
+  const rows=discs.map((d,i)=>({i,d})).filter(r=>!isSlotEmpty(r.d)&&!isWish(r.i));
+  const by=(x,y)=>String(x||'').localeCompare(String(y||''),undefined,{sensitivity:'base'});
+  const title=`CrateChanger — ${rows.length} discs — ${new Date().toLocaleDateString()}`;
+  let css,body;
+  if(kind==='grid'){
+    // slot order: that's how the changer's remote works. 16 per page.
+    const cells=rows.map(r=>{
+      const src=customArt.get(r.i)||autoSources(mbCache[keyOf(r.d)])[0]||'';
+      return `<div class="c"><div class="a">${src?`<img src="${escH(src)}" alt="">`:'<span>💿</span>'}<div class="n">${slotNum(r.i)}</div></div><div class="t"><b>${escH(r.d[0])}</b><br>${escH(r.d[1])}</div></div>`;
+    });
+    const pages=[];for(let k=0;k<cells.length;k+=16)pages.push(`<section class="page">${cells.slice(k,k+16).join('')}</section>`);
+    css='@page{size:letter;margin:10mm}*{box-sizing:border-box}body{font-family:Arial,Helvetica,sans-serif;margin:0;color:#000}'+
+      '.page{display:grid;grid-template-columns:repeat(4,1fr);gap:4mm;break-after:page;page-break-after:always}.page:last-child{break-after:auto;page-break-after:auto}'+
+      '.c{border:1px solid #999;padding:1.5mm;break-inside:avoid}.a{position:relative;aspect-ratio:1/1;background:#e8e8e8;display:flex;align-items:center;justify-content:center;overflow:hidden}'+
+      '.a img{width:100%;height:100%;object-fit:cover;display:block}.a span{font-size:26pt;opacity:.3}'+
+      '.n{position:absolute;left:0;bottom:0;background:#000;color:#fff;font:bold 15pt/1 Arial,sans-serif;padding:1mm 2mm}'+
+      '.t{font-size:7pt;line-height:1.25;margin-top:1mm;height:2.6em;overflow:hidden}';
+    body=pages.join('');
+  }else{
+    rows.sort((a,b)=>by(sortName(a.d[0]),sortName(b.d[0]))||by(a.d[1],b.d[1]));
+    let letter='';const out=[];
+    rows.forEach(r=>{
+      const L=(sortName(r.d[0]).trim()[0]||'#').toUpperCase();const head=/[A-Z]/.test(L)?L:'#';
+      if(head!==letter){letter=head;out.push(`<div class="L">${escH(head)}</div>`)}
+      out.push(`<div class="r"><span class="ar">${escH(r.d[0])} — ${escH(r.d[1])}</span><span class="dots"></span><span class="s">${slotNum(r.i)}</span></div>`);
+    });
+    css='@page{size:letter;margin:10mm}body{font-family:Arial,Helvetica,sans-serif;font-size:8pt;margin:0;color:#000}h1{font-size:11pt;margin:0 0 2mm}'+
+      '.cols{column-count:2;column-gap:7mm}.r{display:flex;align-items:baseline;gap:1mm;break-inside:avoid;line-height:1.32}'+
+      '.ar{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80mm}.dots{flex:1;border-bottom:1px dotted #777;min-width:3mm}'+
+      '.s{font-weight:bold;font-variant-numeric:tabular-nums}.L{font-weight:bold;font-size:9pt;margin:1.6mm 0 .4mm;border-bottom:1px solid #000;break-after:avoid}';
+    body=`<h1>${escH(title)}</h1><div class="cols">${out.join('')}</div>`;
+  }
+  // prints once the covers have loaded (or after 5 s)
+  const printer='<script>(function(){var im=[].slice.call(document.images),left=im.length,done=0,fired=false;'+
+    'function go(){if(fired)return;fired=true;setTimeout(function(){window.print()},250)}'+
+    'if(!left){go();return}setTimeout(go,5000);im.forEach(function(i){function f(){if(++done>=left)go()}if(i.complete)f();else{i.onload=f;i.onerror=function(){i.style.visibility="hidden";f()}}})})();<\/script>';
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${escH(title)}</title><style>${css}</style></head><body>${body}${printer}</body></html>`;
+}
+function printBooklet(kind){
+  const w=window.open('','_blank');
+  if(!w){toast('POPUP BLOCKED — ALLOW POPUPS TO PRINT',4000);return}
+  w.document.write(bookletHtml(kind));
+  w.document.close();
+  closePrintModal();
+}
+
+// ── PLAY ON CHANGER: Home Assistant webhook ──
+const HOOK_KEY='cc_webhook_v1';
+function webhookCfg(){
+  try{const c=JSON.parse(safeGet(HOOK_KEY));if(c&&typeof c==='object')return {url:String(c.url||''),markPlaying:c.markPlaying!==false}}catch(e){}
+  return {url:'',markPlaying:true};
+}
+function validWebhookUrl(u,pageProto=location.protocol){
+  let x;try{x=new URL(u)}catch(e){return 'not a valid URL'}
+  if(x.protocol!=='https:'&&x.protocol!=='http:')return 'it must start with https://';
+  if(pageProto==='https:'&&x.protocol==='http:')return 'this page is https, so the browser blocks an http:// webhook — use your https Home Assistant address (e.g. Nabu Casa)';
+  return '';
+}
+async function sendWebhook(url,payload){
+  try{
+    const r=await fetchTimeout(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)},10000);
+    return r.ok?{ok:true,confirmed:true}:{ok:false,error:'HTTP '+r.status};
+  }catch(e){
+    // usually CORS (Home Assistant hasn't allowed this site): fall back to a plain form post, which browsers send without CORS
+    try{
+      await fetchTimeout(url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams(Object.entries(payload).map(([k,v])=>[k,String(v)])).toString()},10000);
+      return {ok:true,confirmed:false};
+    }catch(e2){return {ok:false,error:(e2&&e2.message)||'network error'}}
+  }
+}
+async function playOnChanger(){
+  if(currentModalIndex===null)return;
+  const i=currentModalIndex;const d=discs[i];if(isSlotEmpty(d))return;
+  const cfg=webhookCfg();
+  if(!cfg.url){openSettings();return}
+  const err=validWebhookUrl(cfg.url);if(err){toast('WEBHOOK: '+err.toUpperCase(),6000);return}
+  const btn=$('playChangerBtn');btn.disabled=true;
+  const r=await sendWebhook(cfg.url,{event:'play',slot:i+1,slot_padded:slotNum(i),artist:d[0],album:d[1],source:'cratechanger'});
+  btn.disabled=false;
+  if(!r.ok){toast('COULD NOT REACH THE CHANGER: '+String(r.error).toUpperCase(),5000);return}
+  if(cfg.markPlaying&&currentModalIndex===i){setNowPlaying();logPlay()}
+  toast(r.confirmed?'▶ SENT TO THE CHANGER ✓':'▶ SENT — NO CONFIRMATION (SEE ⚙ SETTINGS TO TURN IT ON)',4500);
+}
+function saveWebhookSettings(){
+  const url=$('hookUrl').value.trim();
+  if(url){const err=validWebhookUrl(url);if(err){toast('WEBHOOK: '+err.toUpperCase(),6000);return false}}
+  safeSet(HOOK_KEY,JSON.stringify({url,markPlaying:$('hookMark').checked}));
+  toast(url?'WEBHOOK SAVED ✓':'WEBHOOK REMOVED');
+  return true;
+}
+async function testWebhook(){
+  if(!saveWebhookSettings())return;
+  const cfg=webhookCfg();if(!cfg.url){toast('ENTER THE WEBHOOK URL FIRST');return}
+  const r=await sendWebhook(cfg.url,{event:'test',slot:0,slot_padded:'000',artist:'CrateChanger',album:'Test',source:'cratechanger'});
+  toast(!r.ok?'TEST FAILED: '+String(r.error).toUpperCase():r.confirmed?'TEST SENT ✓ — HOME ASSISTANT ANSWERED':'TEST SENT — NO CONFIRMATION (ADD THIS SITE TO cors_allowed_origins TO SEE ONE)',6000);
+}
+
+// ── SYNC: private GitHub Gist (token with the Gists permission only) ──
+const GIST_KEY='cc_gist_v1',GIST_DIRTY_KEY='cc_gist_dirty',GIST_DESC='CrateChanger sync — do not edit by hand';
+const GIST_DATA='cratechanger-data.json',GIST_ART='cratechanger-art.json';
+let gistApplying=false,gistTimer=null,gistBusy=false,gistLastPull=0;
+let GIST_DELAY=15000;
+function gistCfg(){try{const c=JSON.parse(safeGet(GIST_KEY));if(c&&typeof c==='object'&&c.token)return c}catch(e){}return null}
+function setGistCfg(c){if(c)safeSet(GIST_KEY,JSON.stringify(c));else{try{localStorage.removeItem(GIST_KEY)}catch(e){}}}
+const syncDirty=()=>safeGet(GIST_DIRTY_KEY)==='1';
+function markSyncDirty(){
+  if(gistApplying)return;
+  const c=gistCfg();if(!c||!c.gistId)return;
+  safeSet(GIST_DIRTY_KEY,'1');
+  if(c.auto!==false){clearTimeout(gistTimer);gistTimer=setTimeout(()=>syncNow(false).catch(()=>{}),GIST_DELAY)}
+  renderSyncStatus();
+}
+async function gh(path,opts={},token){
+  const c=gistCfg();const tok=token||(c&&c.token);
+  const headers=Object.assign({'Accept':'application/vnd.github+json','Authorization':'Bearer '+tok,'X-GitHub-Api-Version':'2022-11-28'},opts.body?{'Content-Type':'application/json'}:{});
+  const r=await fetchTimeout('https://api.github.com'+path,Object.assign({},opts,{headers}),30000);
+  if(r.status===401)throw new Error('GitHub rejected the token (expired or mistyped)');
+  if(r.status===403||r.status===404){let msg='';try{msg=(await r.json()).message||''}catch(e){}throw new Error(r.status===404?'not found — does the token have the Gists permission?':'GitHub refused: '+msg)}
+  if(!r.ok)throw new Error('GitHub HTTP '+r.status);
+  return r.status===204?null:r.json();
+}
+// the token is never part of the payload; cover art goes in its own file so the data file stays small
+function syncPayload(){
+  const p=buildBackupPayload();
+  const art={customArt:p.customArt||{},shelfArt:p.shelfArt||{}};
+  delete p.customArt;delete p.shelfArt;
+  p.valueCache=valueCache;
+  return {data:JSON.stringify(p),art:JSON.stringify(art)};
+}
+async function gistFileText(f){
+  if(!f)return null;
+  if(f.truncated&&f.raw_url){const r=await fetchTimeout(f.raw_url,{},30000);if(!r.ok)throw new Error('could not download '+f.filename);return r.text()}
+  return f.content;
+}
+const gistVersion=g=>(g&&g.history&&g.history[0]&&g.history[0].version)||(g&&g.updated_at)||null;
+async function readGist(id){
+  const g=await gh('/gists/'+id);
+  const dataTxt=await gistFileText(g.files&&g.files[GIST_DATA]);
+  const artTxt=await gistFileText(g.files&&g.files[GIST_ART]);
+  return {g,ver:gistVersion(g),data:dataTxt?JSON.parse(dataTxt):null,art:artTxt?JSON.parse(artTxt):{}};
+}
+async function pushGist(c){
+  const p=syncPayload();
+  const g=await gh('/gists/'+c.gistId,{method:'PATCH',body:JSON.stringify({files:{[GIST_DATA]:{content:p.data},[GIST_ART]:{content:p.art}}})});
+  c.lastVersion=gistVersion(g);c.lastSync=new Date().toISOString();c.conflict=false;setGistCfg(c);
+  try{localStorage.removeItem(GIST_DIRTY_KEY)}catch(e){}
+}
+async function applyRemote(remote,c){
+  const d=remote.data;
+  if(!d||!Array.isArray(d.discs))throw new Error('the gist does not contain CrateChanger data');
+  const snap=snapshot();
+  gistApplying=true;
+  try{
+    discs=d.discs.map(normalizeDisc);while(discs.length<MIN_SLOTS)discs.push(null);
+    meta=(d.meta&&typeof d.meta==='object'&&!Array.isArray(d.meta))?d.meta:{};
+    if(d.mbCache&&typeof d.mbCache==='object'&&!Array.isArray(d.mbCache))mbCache=d.mbCache;
+    if(d.artistCache&&typeof d.artistCache==='object'){artistCache=d.artistCache;saveArtistCache()}
+    if(d.valueCache&&typeof d.valueCache==='object'){valueCache=d.valueCache;saveValues()}
+    shelf=Array.isArray(d.shelf)?d.shelf.filter(x=>x&&Array.isArray(x.disc)):[];
+    const art=remote.art||{};
+    const ca=new Map(Object.entries(art.customArt||{}).filter(([k,v])=>/^\d+$/.test(k)&&typeof v==='string'&&v.startsWith('data:image/')).map(([k,v])=>[Number(k),v]));
+    for(const k of [...customArt.keys()])if(!ca.has(k))await deleteCustomArt(k);
+    for(const [k,v] of ca)if(customArt.get(k)!==v)await putCustomArt(k,v);
+    await syncShelfArt(new Map(Object.entries(art.shelfArt||{}).filter(([,v])=>typeof v==='string'&&v.startsWith('data:image/'))));
+    if(nowPlaying&&nowPlaying.index>=discs.length){nowPlaying=null;try{localStorage.removeItem(NP_KEY)}catch(e){}}
+    saveDiscs();saveMeta();saveMbCache();saveShelf();
+  }finally{gistApplying=false}
+  try{localStorage.removeItem(GIST_DIRTY_KEY)}catch(e){}
+  c.lastVersion=remote.ver;c.lastSync=new Date().toISOString();c.conflict=false;setGistCfg(c);
+  buildGrid();
+  offerUndo('SYNCED FROM GITHUB',snap);
+}
+async function syncNow(interactive=true){
+  const c=gistCfg();
+  if(!c||!c.gistId){if(interactive)openSettings();return}
+  if(gistBusy)return;
+  gistBusy=true;clearTimeout(gistTimer);renderSyncStatus('SYNCING…');
+  try{
+    const remote=await readGist(c.gistId);
+    gistLastPull=Date.now();
+    const remoteChanged=remote.ver!==c.lastVersion;
+    const dirty=syncDirty();
+    if(remoteChanged&&dirty){
+      if(!interactive){c.conflict=true;setGistCfg(c);toast('☁ SYNC CONFLICT — TAP ☁ IN THE HEADER TO CHOOSE WHICH VERSION TO KEEP',7000);return}
+      const keepLocal=confirm('SYNC CONFLICT — this device AND another device changed the collection since the last sync.\n\n'+
+        'OK = keep THIS device\'s version (uploaded; GitHub keeps the other one in the gist\'s history)\n'+
+        'Cancel = take the version from GitHub (replaces this device\'s; you can UNDO right after)');
+      if(keepLocal)await pushGist(c);else await applyRemote(remote,c);
+    }else if(remoteChanged){
+      await applyRemote(remote,c);
+      if(!interactive)toast('☁ UPDATED FROM ANOTHER DEVICE',4000);
+    }else if(dirty){
+      await pushGist(c);
+    }
+    if(interactive)toast('☁ SYNCED ✓');
+  }catch(e){
+    if(interactive)alert('Sync failed: '+e.message);else toast('☁ SYNC FAILED: '+String(e.message).toUpperCase(),5000);
+  }finally{gistBusy=false;renderSyncStatus()}
+}
+async function connectGist(){
+  const token=$('gistToken').value.trim();
+  if(!/^(ghp_|github_pat_)[A-Za-z0-9_]{20,}$/.test(token)){alert('That doesn\'t look like a GitHub token — they start with github_pat_ (fine-grained) or ghp_ (classic).');return}
+  const btn=$('gistConnectBtn');btn.disabled=true;renderSyncStatus('CONNECTING…');
+  try{
+    const user=await gh('/user',{},token);
+    const list=await gh('/gists?per_page=100',{},token);
+    const found=(list||[]).find(g=>g&&g.description===GIST_DESC&&g.files&&g.files[GIST_DATA]);
+    const c={token,login:user.login,auto:true,gistId:null,lastVersion:null};
+    if(found){
+      c.gistId=found.id;setGistCfg(c);
+      const remote=await readGist(found.id);
+      const n=(remote.data&&Array.isArray(remote.data.discs))?remote.data.discs.filter(d=>!isSlotEmpty(normalizeDisc(d))).length:0;
+      const load=confirm(`Found existing CrateChanger sync data on GitHub (${n} discs, last changed ${new Date(found.updated_at).toLocaleString()}).\n\n`+
+        'OK = load it onto this device (replaces this device\'s collection; you can UNDO)\nCancel = keep this device\'s collection and upload it instead');
+      if(load)await applyRemote(remote,c);else{c.lastVersion=remote.ver;await pushGist(c)}
+    }else{
+      const p=syncPayload();
+      const g=await gh('/gists',{method:'POST',body:JSON.stringify({description:GIST_DESC,public:false,files:{[GIST_DATA]:{content:p.data},[GIST_ART]:{content:p.art}}})},token);
+      c.gistId=g.id;c.lastVersion=gistVersion(g);c.lastSync=new Date().toISOString();setGistCfg(c);
+      try{localStorage.removeItem(GIST_DIRTY_KEY)}catch(e){}
+    }
+    $('gistToken').value='';
+    toast('☁ SYNC CONNECTED AS '+String(user.login).toUpperCase()+' ✓',5000);
+  }catch(e){setGistCfg(null);alert('Could not connect: '+e.message)}
+  finally{btn.disabled=false;renderSyncStatus()}
+}
+function disconnectGist(){
+  if(!confirm('Stop syncing on this device?\n\nThe token is removed from this browser. Your collection stays here, and the private gist stays on GitHub (delete it there if you want).'))return;
+  clearTimeout(gistTimer);setGistCfg(null);try{localStorage.removeItem(GIST_DIRTY_KEY)}catch(e){}
+  renderSyncStatus();toast('☁ SYNC DISCONNECTED');
+}
+function renderSyncStatus(busyText){
+  const c=gistCfg();const dirty=syncDirty();
+  const pill=$('syncPill');
+  if(pill){
+    pill.style.display=c&&c.gistId?'':'none';
+    $('syncPillText').textContent=busyText?'SYNCING':c&&c.conflict?'CONFLICT':dirty?'PENDING':'SYNCED';
+    pill.classList.toggle('warn',!!(c&&c.conflict));
+  }
+  const st=$('syncStatus');if(!st)return;
+  st.textContent=busyText||(c&&c.gistId
+    ?`CONNECTED AS ${String(c.login||'?').toUpperCase()} · GIST ${String(c.gistId).slice(0,8)}… · LAST SYNC ${c.lastSync?new Date(c.lastSync).toLocaleString():'—'}${c.conflict?' · CONFLICT — PRESS SYNC NOW':dirty?' · CHANGES WAITING TO UPLOAD':' · UP TO DATE'}`
+    :'NOT CONNECTED');
+  $('gistConnectRow').style.display=c&&c.gistId?'none':'';
+  $('gistLinkedRow').style.display=c&&c.gistId?'':'none';
+  if(c&&c.gistId)$('gistAuto').checked=c.auto!==false;
+}
+function setGistAuto(on){const c=gistCfg();if(!c)return;c.auto=!!on;setGistCfg(c);renderSyncStatus()}
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState!=='visible')return;
+  const c=gistCfg();
+  if(c&&c.gistId&&c.auto!==false&&Date.now()-gistLastPull>30000)syncNow(false).catch(()=>{});
+});
+
+// ── SETTINGS dialog ──
+function openSettings(){
+  const h=webhookCfg();
+  $('hookUrl').value=h.url;$('hookMark').checked=h.markPlaying;
+  $('hookOrigin').textContent=location.origin&&location.origin!=='null'?location.origin:'https://rmillerpine75.github.io';
+  renderSyncStatus();
+  $('settingsModal').classList.add('open');
+}
+function closeSettings(){$('settingsModal').classList.remove('open')}
+
+// ── CAMERA SCAN FALLBACK (Safari / Firefox / Chrome on Windows have no native barcode reader) ──
+const ZXING_URL='https://cdn.jsdelivr.net/npm/@zxing/browser@0.2.1/umd/zxing-browser.min.js';
+const ZXING_SRI='sha384-HRtzk9lZgkbSgvUyQrnfC/GxiXZgwaNyD7hC9wcXlsBpDhkS80ISl73juef2FRuf';   // pinned: a tampered copy will not run
+let zxingLoading=null;
+function loadZXing(){
+  if(window.ZXingBrowser)return Promise.resolve(window.ZXingBrowser);
+  if(zxingLoading)return zxingLoading;
+  zxingLoading=new Promise((res,rej)=>{
+    const s=document.createElement('script');
+    s.src=ZXING_URL;s.integrity=ZXING_SRI;s.crossOrigin='anonymous';
+    s.onload=()=>window.ZXingBrowser?res(window.ZXingBrowser):rej(new Error('the scanner did not initialise'));
+    s.onerror=()=>{zxingLoading=null;s.remove();rej(new Error('could not load the scanner (offline?)'))};
+    document.head.appendChild(s);
+  });
+  return zxingLoading;
+}
+
+// ── PHONE "BACK" CLOSES THE OPEN WINDOW (and #slot-012 links open a disc) ──
+// Opening a window adds a history entry; Back closes the top window. Closing a window from the app NEVER navigates:
+// history.back() is asynchronous and races with the next window opening (it can even step off the app), so instead
+// the entry is marked "dead" in place (synchronous) and reused by the next window. A real Back over a dead entry
+// just skips it.
+const closingByPop=new Set();
+const isLayerOpen=id=>{const el=$(id);return !!(el&&el.classList.contains('open'))};
+const plainUrl=()=>location.pathname+location.search;
+const histObserver=new MutationObserver(muts=>{
+  muts.forEach(m=>{
+    const el=m.target;const id=el.id;
+    const open=el.classList.contains('open');
+    const was=String(m.oldValue||'').split(/\s+/).includes('open');
+    if(open===was)return;
+    const st=history.state;
+    try{
+      if(open){
+        const url=id==='infoModal'&&currentModalIndex!==null?'#slot-'+slotNum(currentModalIndex):plainUrl();
+        // reuse our entry when it is dead, belongs to a window that is no longer open, or is this window's own
+        const reuse=st&&st.cc&&(st.cc==='dead'||st.id===id||!isLayerOpen(st.id));
+        if(reuse)history.replaceState({cc:'layer',id},'',url);else history.pushState({cc:'layer',id},'',url);
+      }else{
+        if(closingByPop.has(id)){closingByPop.delete(id);return}
+        if(st&&st.cc==='layer'&&st.id===id)history.replaceState({cc:'dead'},'',plainUrl());
+      }
+    }catch(e){}
+  });
+});
+MODAL_LAYERS.forEach(([id])=>{const el=$(id);if(el)histObserver.observe(el,{attributes:true,attributeFilter:['class'],attributeOldValue:true})});
+window.addEventListener('popstate',e=>{
+  const layer=openLayer();
+  if(layer){closingByPop.add(layer[0]);layer[1]();return}
+  if(e.state&&e.state.cc)history.back();   // landed on a dead/stale entry of ours: keep going (only ever after a real Back)
+});
+function openFromHash(hash){
+  const m=/^#slot-(\d{1,4})$/.exec(hash||'');if(!m)return false;
+  const i=Number(m[1])-1;
+  try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}
+  if(i>=0&&i<discs.length&&!isSlotEmpty(discs[i])){openInfoModal(i);return true}
+  return false;
+}
+
+// ── INSTALLABLE APP + OFFLINE (service worker; only on https / localhost) ──
+function registerServiceWorker(){
+  if(!('serviceWorker' in navigator))return;
+  const ok=location.protocol==='https:'||location.hostname==='localhost'||location.hostname==='127.0.0.1';
+  if(!ok)return;
+  const hadController=!!navigator.serviceWorker.controller;
+  navigator.serviceWorker.register('sw.js').then(reg=>{
+    const showUpdate=()=>{if(reg.waiting&&navigator.serviceWorker.controller)$('updateBar').classList.add('visible')};
+    showUpdate();
+    reg.addEventListener('updatefound',()=>{const nw=reg.installing;if(nw)nw.addEventListener('statechange',()=>{if(nw.state==='installed')showUpdate()})});
+    setInterval(()=>reg.update().catch(()=>{}),60*60*1000);
+  }).catch(e=>console.warn('service worker not registered',e));
+  let reloading=false;
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!hadController||reloading)return;reloading=true;location.reload()});
+}
+function applyUpdate(){
+  $('updateBar').classList.remove('visible');
+  navigator.serviceWorker.getRegistration().then(reg=>{if(reg&&reg.waiting)reg.waiting.postMessage('SKIP_WAITING');else location.reload()});
+}
+
+function round6Init(){
+  renderShelfPill();
+  shelfArtStore.all().then(m=>{shelfArt=m}).catch(()=>{});
+  renderSyncStatus();
+  registerServiceWorker();
+  openFromHash(location.hash);
+  const c=gistCfg();
+  if(c&&c.gistId&&c.auto!==false)setTimeout(()=>syncNow(false).catch(()=>{}),1500);
+}
+
 async function init(){
   await loadCustomArt();
   await migrateLegacyMetaArt();
@@ -4037,6 +4765,7 @@ async function init(){
   setTimeout(offerOldCacheCleanup,400);
   setTimeout(()=>{offerV7Import().catch(()=>{})},900);
   abInit().catch(()=>{});
+  round6Init();
 }
 init().catch(e=>{console.error('init failed',e);if(!$('grid').children.length)buildGrid();toast('STARTED WITH ERRORS - SEE CONSOLE',6000)});
 </script>

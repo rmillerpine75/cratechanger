@@ -21,3 +21,18 @@ const out = path.join(ROOT, 'dist', 'cratechanger.html');
 fs.writeFileSync(out, html, 'utf8');
 const sha = crypto.createHash('sha256').update(html).digest('hex');
 console.log(`built dist/cratechanger.html  ${html.split('\n').length} lines  ${Math.round(html.length / 1024)} KB  sha256 ${sha.slice(0, 16)}`);
+
+// PWA files next to the page (manifest, icons, service worker). The Pages deploy publishes them with the page;
+// opened straight from disk they're simply unused. The worker's version = this page's hash, so a changed app updates.
+const pwaDir = path.join(ROOT, 'src', 'pwa');
+const emitted = [];
+for (const f of fs.readdirSync(pwaDir).sort()) {
+  const from = path.join(pwaDir, f);
+  if (f === 'sw.template.js') {
+    const sw = read('src/pwa/' + f).replaceAll('@@VERSION@@', sha.slice(0, 12));
+    if (sw.includes('@@')) throw new Error('sw.js still contains a placeholder');
+    fs.writeFileSync(path.join(ROOT, 'dist', 'sw.js'), sw, 'utf8');
+    emitted.push('sw.js');
+  } else { fs.copyFileSync(from, path.join(ROOT, 'dist', f)); emitted.push(f); }
+}
+console.log('pwa files: ' + emitted.join(', '));

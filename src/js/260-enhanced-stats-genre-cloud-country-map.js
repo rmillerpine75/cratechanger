@@ -74,6 +74,7 @@ function openStats(){
     html.push(`<div class="stats-section"><h3>NEGLECTED (${neglected.length})</h3><div class="attn-hint">${neglected.length-never} NOT PLAYED IN OVER A YEAR · ${never} NEVER PLAYED · OLDEST FIRST</div>${rows}${neglected.length>12?`<div class="attn-hint">…and ${neglected.length-12} more</div>`:''}<button class="btn" style="margin-top:8px" type="button" data-pick-neglected="1">🎲 PICK A NEGLECTED DISC</button></div>`);
   }
 
+  html.push(setsSectionHtml());
   html.push(valueSectionHtml());
   html.push(growthSectionHtml());
 

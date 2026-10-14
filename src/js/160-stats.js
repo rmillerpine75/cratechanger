@@ -40,6 +40,8 @@ function renderBaseStats(){
       <div class="stat-card"><div class="val">${flagCounts.loaned}</div><div class="lbl">LOANED OUT</div></div>
       <div class="stat-card"><div class="val">${flagCounts.replace}</div><div class="lbl">NEED REPLACE</div></div>
       <div class="stat-card"><div class="val">${totalPlays}</div><div class="lbl">TOTAL PLAYS</div></div>
+      <div class="stat-card"><div class="val">${albumCount()}</div><div class="lbl">ALBUMS (A SET = 1)</div></div>
+      <div class="stat-card"><div class="val">${shelf.length}</div><div class="lbl">📦 ON THE SHELF</div></div>
       <div class="stat-card"><div class="val">${wishCount}</div><div class="lbl">♥ WISHLIST</div></div>
     </div>
     <div class="stats-section">

@@ -12,6 +12,8 @@ function openHeatmap(){
     const flags = m.flags||[];
     const cell = document.createElement('div');
     cell.className='hm-cell';
+    if(linkedWithNext(i))cell.className+=' hm-set-next';
+    if(linkedWithPrev(i))cell.className+=' hm-set-prev';
     if(flags.includes('wishlist')) cell.className+=' hm-wishlist';
     else if(!d||isSlotEmpty(d)) cell.className+=' hm-empty';
     else if(flags.includes('broken')) cell.className+=' hm-broken';

@@ -197,26 +197,44 @@ $('barcodeResults').addEventListener('click',e=>{
   $('barcodeResults').querySelectorAll('.edition-row').forEach(r=>r.classList.toggle('current',r===b));
   toast('FILLED FROM THE BARCODE — SAVE TO KEEP (THAT EDITION WILL BE PINNED)',4000);
 });
-if('BarcodeDetector' in window&&navigator.mediaDevices&&navigator.mediaDevices.getUserMedia){const sb=$('scanBtn');if(sb)sb.style.display=''}
+if(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia){const sb=$('scanBtn');if(sb)sb.style.display=''}   // native reader, or the ZXing fallback
 async function scanBarcode(){
-  let stream=null,overlay=null,stop=false;
-  const finish=()=>{stop=true;if(stream)stream.getTracks().forEach(t=>t.stop());if(overlay)overlay.remove()};
+  // native BarcodeDetector where the browser has one (Chrome on Android/macOS), otherwise the pinned ZXing library
+  let stream=null,controls=null,stop=false,settle=null;
+  const overlay=document.createElement('div');overlay.className='scan-overlay';
+  overlay.innerHTML='<video playsinline muted></video><div class="br-last-backup scan-status">STARTING THE CAMERA…</div><button class="btn" type="button">CANCEL</button>';
+  document.body.appendChild(overlay);
+  const video=overlay.querySelector('video');
+  const status=t=>{const s=overlay.querySelector('.scan-status');if(s)s.textContent=t};
+  const finish=()=>{
+    if(stop)return;stop=true;
+    try{controls&&controls.stop()}catch(e){}
+    if(stream)stream.getTracks().forEach(t=>t.stop());
+    overlay.remove();if(settle)settle();
+  };
+  const found=code=>{if(stop)return;$('editBarcode').value=String(code).replace(/\D/g,'');finish();lookupBarcode()};
+  overlay.querySelector('button').onclick=finish;
+  const timeout=new Promise(r=>{settle=r;setTimeout(r,30000)});
   try{
-    const det=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e']});
-    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
-    overlay=document.createElement('div');overlay.className='scan-overlay';
-    overlay.innerHTML='<video playsinline muted></video><div class="br-last-backup">POINT THE CAMERA AT THE BARCODE</div><button class="btn" type="button">CANCEL</button>';
-    document.body.appendChild(overlay);
-    overlay.querySelector('button').onclick=finish;
-    const video=overlay.querySelector('video');video.srcObject=stream;await video.play();
-    const t0=Date.now();
-    while(!stop&&Date.now()-t0<30000){
-      const codes=await det.detect(video).catch(()=>[]);
-      if(codes&&codes.length){$('editBarcode').value=codes[0].rawValue;finish();lookupBarcode();return}
-      await new Promise(r=>setTimeout(r,250));
+    if('BarcodeDetector' in window){
+      const det=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e']});
+      stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+      if(stop)return;
+      video.srcObject=stream;await video.play();status('POINT THE CAMERA AT THE BARCODE');
+      const loop=(async()=>{while(!stop){const codes=await det.detect(video).catch(()=>[]);if(codes&&codes.length){found(codes[0].rawValue);return}await new Promise(r=>setTimeout(r,250))}})();
+      await Promise.race([loop,timeout]);
+    }else{
+      status('LOADING THE SCANNER…');
+      const Z=await loadZXing();
+      if(stop)return;
+      const reader=new Z.BrowserMultiFormatReader();
+      controls=await reader.decodeFromConstraints({video:{facingMode:'environment'}},video,result=>{if(result)found(result.getText())});
+      if(stop){try{controls.stop()}catch(e){}return}
+      status('POINT THE CAMERA AT THE BARCODE');
+      await timeout;
     }
     if(!stop)toast('NO BARCODE FOUND — TYPE IT IN INSTEAD',4000);
-  }catch(e){toast('CAMERA NOT AVAILABLE: '+((e&&e.message)||e),4000)}
+  }catch(e){if(!stop)toast('CAMERA NOT AVAILABLE: '+((e&&e.message)||e),4000)}
   finally{finish()}
 }
 
