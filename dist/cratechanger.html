@@ -484,6 +484,8 @@ pre.code{background:var(--surface2);border:1px solid var(--border);padding:10px;
 @media (max-width:760px){.print-choices{grid-template-columns:1fr}}
 #gistToken{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:8px 10px;font-family:'Share Tech Mono',monospace;font-size:.75rem;min-width:0}
 #gistToken:focus{outline:none;border-color:var(--gold)}
+.token-link{color:var(--gold);font-weight:bold;text-decoration:none;border:1px solid var(--gold);padding:1px 6px;white-space:nowrap}
+.token-link:hover,.token-link:focus-visible{background:var(--gold);color:#000}
 </style>
 </head>
 <body>
@@ -839,8 +841,9 @@ pre.code{background:var(--surface2);border:1px solid var(--border);padding:10px;
     <button class="modal-close" onclick="closeSettings()" aria-label="Close">✕</button>
     <h3>⚙ SETTINGS</h3>
     <div class="br-section">
-      <p>☁ SYNC BETWEEN DEVICES — through a private GitHub Gist. Needs a GitHub token with <b>only</b> the Gists permission:
-      github.com → Settings → Developer settings → Fine-grained tokens → Generate new token → Account permissions → <b>Gists: Read and write</b> (nothing else). Paste it once on each device.</p>
+      <p>☁ SYNC BETWEEN DEVICES — through a private GitHub Gist, using a GitHub token that can touch <b>only</b> your gists.
+      <a class="token-link" href="https://github.com/settings/personal-access-tokens/new?name=CrateChanger+sync&amp;description=Sync+for+the+CrateChanger+app+%28gists+only%29&amp;expires_in=366&amp;gists=write" target="_blank" rel="noopener">CREATE THE TOKEN ↗</a>
+      opens GitHub with everything pre-filled (Gists: read and write, nothing else, 1-year expiry) — click <b>Generate token</b>, copy it, paste it below. Once on each device.</p>
       <div class="br-last-backup" id="syncStatus"></div>
       <div id="gistConnectRow" class="move-row" style="margin-top:8px"><input type="password" id="gistToken" placeholder="github_pat_…" autocomplete="off" spellcheck="false" aria-label="GitHub token"><button class="btn" id="gistConnectBtn" type="button" onclick="connectGist()">CONNECT</button></div>
       <div id="gistLinkedRow" style="display:none;margin-top:4px">

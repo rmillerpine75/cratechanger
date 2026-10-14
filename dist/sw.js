@@ -1,6 +1,6 @@
-// CrateChanger service worker. build.mjs writes dist/sw.js from this file; f634b7552880 = hash of the page it serves,
+// CrateChanger service worker. build.mjs writes dist/sw.js from this file; f0bb3c3fa5a6 = hash of the page it serves,
 // so every deploy that changes the app installs a new worker and shows the "new version ready" bar.
-const VERSION='cc-shell-f634b7552880';
+const VERSION='cc-shell-f0bb3c3fa5a6';
 const ART='cc-art-v1';
 const ART_MAX=600;
 const SHELL=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./icon-maskable-512.png'];

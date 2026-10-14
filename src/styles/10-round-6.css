@@ -38,3 +38,5 @@ pre.code{background:var(--surface2);border:1px solid var(--border);padding:10px;
 @media (max-width:760px){.print-choices{grid-template-columns:1fr}}
 #gistToken{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:8px 10px;font-family:'Share Tech Mono',monospace;font-size:.75rem;min-width:0}
 #gistToken:focus{outline:none;border-color:var(--gold)}
+.token-link{color:var(--gold);font-weight:bold;text-decoration:none;border:1px solid var(--gold);padding:1px 6px;white-space:nowrap}
+.token-link:hover,.token-link:focus-visible{background:var(--gold);color:#000}

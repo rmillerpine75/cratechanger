@@ -1446,6 +1446,9 @@
 
       // ── camera fallback is pinned ──
       ok('ZXing fallback is pinned to a version with an integrity hash', /@zxing\/browser@0\.2\.1\//.test(ZXING_URL) && /^sha384-[A-Za-z0-9+/]{64}$/.test(ZXING_SRI));
+      const tl = new URL(document.querySelector('#settingsModal .token-link').href);
+      const perms = [...tl.searchParams.keys()].filter(k => !['name', 'description', 'expires_in'].includes(k));
+      ok('the CREATE TOKEN link asks for Gists write and nothing else', tl.pathname === '/settings/personal-access-tokens/new' && perms.join(',') === 'gists' && tl.searchParams.get('gists') === 'write' && !tl.searchParams.has('target_name'), perms.join(','));
     }
   } catch (e) {
     R.push('FAIL harness exception: ' + (e && e.stack || e));
