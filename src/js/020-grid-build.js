@@ -85,6 +85,7 @@ function updateFilterUi(f,shown){
   const b=$('clearFiltersBtn');if(b)b.style.display=anyFilter(f)?'':'none';
   updateFilterToggleLabel(f);
   renderFilterPills(f);
+  afterGridRefresh();
 }
 function clearAllFilters(){
   $('searchInput').value='';
@@ -152,6 +153,7 @@ function buildGrid(){
     slot.className = 'slot'+(isEmpty&&!isWish?' empty-slot':isWish?' wishlist-slot':'');
     slot.dataset.index = i;
     if(setPos(i)){slot.classList.add('in-set');if(builtSort==='slot'){if(linkedWithNext(i))slot.classList.add('set-next');if(linkedWithPrev(i))slot.classList.add('set-prev')}}
+    const wc=wearClasses(i);if(wc.length)slot.classList.add(...wc);
 
     // Art (sources are wired after insertion; nothing is serialised into HTML attributes)
     const hasArt = slotArtSources(i).length>0;
@@ -188,13 +190,14 @@ function buildGrid(){
       <button class="slot-edit-btn" type="button" aria-label="Edit slot ${numPad}" onclick="openEditModal(event,${i})">✏</button>
     `;
 
+    if(slot.classList.contains('wear-out'))slot.insertAdjacentHTML('beforeend','<div class="wear-loan">OUT ON LOAN<br>'+escH(getMeta(i).loanedTo||'')+'</div>');
     // Events
     if(!isEmpty||isWish){
       slot.addEventListener('click',e=>{
         if(e.target.classList.contains('slot-edit-btn')) return;
         if(document.body.classList.contains('edit-mode')) return;
         if(multiSelect){toggleSelect(i,slot);return;}
-        openInfoModal(i);
+        uiOpenDisc(i,slot);
       });
     }
 

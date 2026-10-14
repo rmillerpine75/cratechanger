@@ -6,6 +6,7 @@ let focusedSlot=null;
 
 // Every overlay, topmost first (matches their z-index order). Escape closes ONE layer at a time.
 const MODAL_LAYERS=[
+  ['roomModal',()=>closeRoom()],
   ['fullscreenArt',()=>closeFullscreenArt()],
   ['helpModal',()=>closeHelp()],
   ['editModal',()=>closeEditModal()],

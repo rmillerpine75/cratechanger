@@ -9,4 +9,4 @@ function closeModal(){
   modalToken++;lyricsToken++;
   restoreFocus();
 }
-function handleBackdropClick(e){if(e.target===$('infoModal'))closeModal()}
+function handleBackdropClick(e){if(e.target===$('infoModal'))uiCloseModal()}

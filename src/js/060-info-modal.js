@@ -48,6 +48,7 @@ function openInfoModal(i){
   renderNotesFor(i);
   renderValueFor(i);
   $('playChangerBtn').style.display=webhookCfg().url?'':'none';
+  onDiscOpened(i);
   if(m.addedAt)pRow.insertAdjacentHTML('beforeend',' · ADDED <span>'+escH(String(m.addedAt).slice(0,10))+'</span>');
 
   $('loadingPulse').style.display='';
@@ -90,7 +91,7 @@ function renderArt(sources,key){
   $('downloadArtBtn').style.display='';
   loadImgWithFallbacks(img,sources,
     ()=>{artWrap.innerHTML='<div class="modal-art-placeholder">💿</div>';currentArtUrl=null;$('downloadArtBtn').style.display='none'},
-    src=>{currentArtUrl=src;recordWinner(key,src)});
+    src=>{currentArtUrl=src;recordWinner(key,src);setCdLabel($('modalCd'),src)});
 }
 
 function renderModalData(data,artist,album,idx){

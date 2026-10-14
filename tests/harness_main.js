@@ -1450,6 +1450,167 @@
       const perms = [...tl.searchParams.keys()].filter(k => !['name', 'description', 'expires_in'].includes(k));
       ok('the CREATE TOKEN link asks for Gists write and nothing else', tl.pathname === '/settings/personal-access-tokens/new' && perms.join(',') === 'gists' && tl.searchParams.get('gists') === 'write' && !tl.searchParams.has('target_name'), perms.join(','));
     }
+    {   // ═══ 16. ROUND-7 VISUALS ═══
+      const resetAll7 = async () => {
+        discs = INITIAL_DATA.map(normalizeDisc); while (discs.length < 200) discs.push(null);
+        meta = {}; mbCache = {}; await clearCustomArt(); nowPlaying = null; mbMode = 'ok';
+        $('searchInput').value = ''; ['artistFilter', 'flagFilter', 'genreFilter', 'decadeFilter', 'originFilter'].forEach(id => { $(id).value = ''; });
+        $('sortSelect').value = 'slot'; clearUndoHistory();
+        if (document.body.classList.contains('showroom')) toggleShowroom(false);
+        setView('grid'); setZoomUi(158); window.__ccForceVT = false;
+        buildGrid();
+      };
+      await resetAll7();
+      const solid = hex => { const c = document.createElement('canvas'); c.width = c.height = 40; const x = c.getContext('2d'); x.fillStyle = hex; x.fillRect(0, 0, 40, 40); return c.toDataURL('image/png'); };
+      const px = (cols) => { const a = []; cols.forEach(([n, r, g, b]) => { for (let k = 0; k < n; k++) a.push(r, g, b, 255); }); return new Uint8ClampedArray(a); };
+
+      // ── colour from cover art ──
+      const p1 = paletteFromPixels(px([[80, 5, 5, 8], [20, 200, 30, 40]]));
+      ok('palette: the vivid colour wins over a mostly-black cover', !!p1 && (p1.h < 15 || p1.h > 345) && p1.grey === false, JSON.stringify(p1));
+      const p2 = paletteFromPixels(px([[100, 128, 128, 128]]));
+      ok('palette: a grey cover is recognised as grey', !!p2 && p2.grey === true);
+      const hues = [0, 45, 60, 120, 200, 240, 280, 330];
+      const dark = hues.every(h => contrastRatio(discColors({ h, s: .9, l: .5, dh: h, ds: .5, dl: .3 }).accent, '#111114') >= 4.5);
+      document.body.classList.add('light-theme');
+      const light = hues.every(h => contrastRatio(discColors({ h, s: .9, l: .5, dh: h, ds: .5, dl: .3 }).accent, '#faf8f5') >= 4.5);
+      document.body.classList.remove('light-theme');
+      ok('disc colours always meet WCAG AA contrast (dark and light theme, every hue)', dark && light);
+      await putCustomArt(4, solid('#1f4fd8'));
+      const pb = await paletteFor(4);
+      ok('a cover\'s palette is extracted in the browser (blue cover -> blue)', !!pb && pb.h > 215 && pb.h < 240, JSON.stringify(pb));
+      ok('...and cached for next time', !!palettes['custom:4:' + customArt.get(4).length]);
+
+      // ── disc view: tint + CD ──
+      nowPlaying = { index: 4, artist: discs[4][0], album: discs[4][1] }; updateNowPlayingBanner();
+      openInfoModal(4); await wait(300);
+      ok('the open disc tints its window with its cover colour', $('infoModal').classList.contains('tinted') && !!$('infoModal').style.getPropertyValue('--disc-accent'));
+      ok('the CD carries the cover as its label', /data:image/.test($('modalCd').querySelector('.cd-label').style.backgroundImage));
+      ok('the CD spins while that disc is playing', $('modalCd').classList.contains('spinning'));
+      ok('the now-playing banner shows a mini CD with the label', /data:image/.test($('npCd').querySelector('.cd-label').style.backgroundImage));
+      clearNowPlaying(); await wait(50);
+      ok('stopping playback stops the spin', !$('modalCd').classList.contains('spinning'));
+      closeModal();
+      openInfoModal(10); await wait(200);
+      ok('a disc without readable art keeps the neutral window', !$('infoModal').classList.contains('tinted'));
+      closeModal();
+
+      // ── morph transitions ──
+      const mm0 = window.matchMedia;
+      const fakeMM = reduce => q => ({ matches: /reduce/.test(q) ? reduce : false, media: q, addEventListener() {}, removeEventListener() {} });
+      window.matchMedia = fakeMM(true);
+      ok('"reduce motion" on: no animations', canVT() === false && reducedMotion() === true);
+      window.matchMedia = fakeMM(false);
+      ok('"reduce motion" off: morph animations on (View Transitions supported here)', canVT() === true);
+      window.matchMedia = mm0;
+      window.__ccForceVT = true;
+      let vtCalls = 0; const svt = document.startViewTransition.bind(document);
+      document.startViewTransition = cb => { vtCalls++; return svt(cb); };
+      const tile4 = document.querySelector('#grid .slot[data-index="4"]');
+      await uiOpenDisc(4, tile4);
+      ok('tile -> disc view morph completes with the disc open', $('infoModal').classList.contains('open') && currentModalIndex === 4 && $('modalArtWrap').style.viewTransitionName === '');
+      await uiCloseModal();
+      ok('...and morphs back closed', !$('infoModal').classList.contains('open') && !tile4.querySelector('.slot-art,.slot-art-placeholder').style.viewTransitionName);
+      $('sortSelect').value = 'artist'; lastFilterAnim = 0;
+      await uiApplyFilters();
+      const firstA = discs[+document.querySelector('#grid .slot').dataset.index][0];
+      ok('sorting animates and lands in the new order', /^Abs/i.test(firstA) && ![...document.querySelectorAll('#grid .slot')].some(el => el.style.viewTransitionName), firstA);
+      $('sortSelect').value = 'slot'; applyFilters();
+      ok('...the animated path really ran (open, close, sort = 3 View Transitions)', vtCalls === 3, vtCalls);
+      delete document.startViewTransition; window.__ccForceVT = false;
+
+      // ── carousel ──
+      setView('ring');
+      ok('carousel view replaces the grid', $('grid').style.display === 'none' && $('ringView').style.display === '' && document.querySelectorAll('#ring .ring-item').length === discs.length);
+      ringRotateTo(5, true);
+      ok('turning brings a slot to the front, lifted', ring.front === 5 && ring.items[5].classList.contains('front') && /scale\(1\.85/.test(ring.items[5].style.transform) && $('ringReadout').textContent.includes('006'));
+      ok('only nearby and every-tenth slot numbers are shown', ring.items[6].classList.contains('num-on') && ring.items[9].classList.contains('num-on') && !ring.items[50].classList.contains('num-on'));
+      document.body.focus && document.body.focus();
+      document.activeElement && document.activeElement.blur && document.activeElement.blur();
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true })); await wait(650);
+      ok('→ turns the carousel one slot', ring.front === 6, ring.front);
+      ring.items[9].click(); await wait(650);
+      ok('clicking another disc brings it to the front', ring.front === 9);
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true })); await wait(150);
+      ok('Enter opens the front disc', $('infoModal').classList.contains('open') && currentModalIndex === 9);
+      closeModal();
+      getMeta(9).flags = ['broken']; $('flagFilter').value = 'broken'; applyFilters(); await wait(120);
+      ok('filters dim non-matching discs on the carousel', !ring.items[9].classList.contains('dim') && ring.items[10].classList.contains('dim'));
+      $('flagFilter').value = ''; applyFilters();
+      ok('the chosen view is remembered', safeGet('cc_view') === 'ring');
+
+      // ── spines ──
+      setView('spines');
+      const spines = [...document.querySelectorAll('#spineShelf .spine')];
+      ok('spine view: one spine per slot, empty slots as gaps', spines.length === discs.length && spines.filter(s => s.classList.contains('empty')).length === discs.filter((d, i) => isSlotEmpty(d) && !isWish(i)).length);
+      const readable = spines.filter(s => !s.classList.contains('empty')).every(s => contrastRatio(s.style.getPropertyValue('--sp-fg'), s.style.getPropertyValue('--sp-bg')) >= 4.5);
+      ok('every spine\'s text is readable on its colour (WCAG AA)', readable);
+      ok('a spine with known cover colours uses them', spines[4].style.getPropertyValue('--sp-stripe') !== 'transparent');
+      ok('spines show artist, album and slot', /Ares Kingdom|ANAL|Absu/i.test(spines[0].textContent) && spines[0].querySelector('.sp-num').textContent === '001');
+      spines[2].click(); await wait(150);
+      ok('clicking a spine opens the disc', $('infoModal').classList.contains('open') && currentModalIndex === 2);
+      closeModal();
+      setView('list');
+      ok('LIST is part of the view picker', listView === true && document.body.classList.contains('list-view') && $('grid').style.display === '');
+      setView('grid');
+      ok('...and back to the grid', listView === false && !document.body.classList.contains('list-view'));
+
+      // ── patina ──
+      await resetAll7();
+      const ago = d => new Date(Date.now() - d * 864e5).toISOString();
+      getMeta(1).flags = ['loaned']; getMeta(1).loanedTo = 'Max';
+      getMeta(2).playHistory = [ago(3)];
+      getMeta(3).playHistory = [ago(400)];
+      getMeta(5).addedAt = ago(200);
+      getMeta(6).addedAt = ago(20);
+      ok('patina rules: loaned / fresh / dusty-by-age / dusty-by-neglect / no evidence', wearClasses(1).includes('wear-out') && wearClasses(2).join() === 'wear-fresh' && wearClasses(3).join() === 'wear-dust' && wearClasses(5).join() === 'wear-dust' && wearClasses(6).length === 0 && wearClasses(0).length === 0);
+      buildGrid();
+      const t1 = document.querySelector('#grid .slot[data-index="1"]');
+      ok('tiles carry their patina, loans show the borrower', t1.classList.contains('wear-out') && t1.querySelector('.wear-loan').textContent.includes('Max') && document.querySelector('#grid .slot[data-index="3"]').classList.contains('wear-dust'));
+      ok('patina is invisible outside Showroom', getComputedStyle(t1.querySelector('.wear-loan')).display === 'none');
+
+      // ── showroom ──
+      await putCustomArt(4, solid('#1f4fd8')); buildGrid();
+      nowPlaying = { index: 4, artist: discs[4][0], album: discs[4][1] };
+      toggleShowroom(true); await wait(300);
+      ok('Showroom on: remembered, button says so', document.body.classList.contains('showroom') && safeGet('cc_showroom') === '1' && /ON/.test($('showroomBtn').textContent));
+      ok('ambient light takes the playing disc\'s colour', !!document.body.style.getPropertyValue('--amb'));
+      ok('patina shows in Showroom', getComputedStyle(document.querySelector('#grid .slot[data-index="1"] .wear-loan')).display === 'flex');
+      toggleShowroom(false);
+      ok('Showroom off: ambient cleared', !document.body.classList.contains('showroom') && !document.body.style.getPropertyValue('--amb') && safeGet('cc_showroom') === '0');
+
+      // ── listening room ──
+      mbCache[keyOf(discs[4])] = { mbTried: true, v: 2, tracks: [{ num: 1, title: 'Track A', length: '3:00' }, { num: 2, title: 'Track B', length: '4:00' }], tags: [], artSources: [] };
+      openRoom(); await wait(250);
+      ok('listening room opens on the disc that is playing', $('roomModal').classList.contains('open') && roomIndex === 4 && $('roomLabel').textContent === 'NOW PLAYING · 005');
+      ok('...with its tracklist and big cover', $('roomTracks').textContent.includes('Track A') && $('roomTracks').textContent.includes('4:00') && /data:image/.test($('roomCover').src) && $('roomAlbum').textContent === discs[4][1]);
+      ok('...tinted by the cover, CD spinning', $('roomModal').classList.contains('tinted') && $('roomCd').classList.contains('spinning'));
+      ok('no PLAY ON CHANGER button without a webhook', $('roomPlayBtn').style.display === 'none');
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }));
+      ok('→ moves to the next disc in the changer', roomIndex === 5 && $('roomLabel').textContent === 'DISC · 006');
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true })); await wait(50);
+      ok('Esc closes the listening room', !$('roomModal').classList.contains('open'));
+      nowPlaying = null;
+      openRoom(); await wait(100);
+      ok('with nothing playing it starts at the first disc', roomIndex === discs.findIndex((d, i) => !isSlotEmpty(d) && !isWish(i)));
+      closeRoom();
+
+      // ── semantic zoom ──
+      setZoomUi(60);
+      ok('zooming far out turns the grid into a colour map', document.body.classList.contains('zoom-map') && $('zoomSlider').value === '60');
+      setZoomUi(240);
+      const tiles = [...document.querySelectorAll('#grid .slot')];
+      ok('zooming far in turns tiles into cards with tracklists', document.body.classList.contains('zoom-cards') && tiles.every(t => t.querySelector('.slot-tracks')) && document.querySelector('#grid .slot[data-index="4"] .slot-tracks').textContent.includes('Track A'));
+      const hs = new Set(tiles.slice(0, 20).map(t => Math.round(t.getBoundingClientRect().height)));
+      ok('...all cards the same height', hs.size === 1, [...hs].join(','));
+      ok('zoom is clamped to its range', setZoomUi(900) === 260 && setZoomUi(1) === 56);
+      setZoomUi(150);
+      const we = new WheelEvent('wheel', { deltaY: -100, ctrlKey: true, bubbles: true, cancelable: true });
+      document.querySelector('.grid-container').dispatchEvent(we);
+      ok('Ctrl+wheel (and trackpad pinch) zooms the grid', Number($('zoomSlider').value) > 150 && we.defaultPrevented);
+      setZoomUi(158);
+      ok('in between, the normal grid', !document.body.classList.contains('zoom-map') && !document.body.classList.contains('zoom-cards'));
+      await resetAll7();
+    }
   } catch (e) {
     R.push('FAIL harness exception: ' + (e && e.stack || e));
   }

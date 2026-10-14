@@ -14,7 +14,8 @@
 <body>
 
 <div id="nowPlayingBanner">
-  <span class="np-disc" id="npDisc">▶ DISC 001</span>
+  <div class="cd mini spinning" id="npCd" aria-hidden="true"><div class="cd-face"><div class="cd-shine"></div><div class="cd-label blank"></div><div class="cd-hole"></div></div></div>
+    <span class="np-disc" id="npDisc">▶ DISC 001</span>
   <span class="np-label">NOW PLAYING —</span>
   <span class="np-text" id="npText">—</span>
   <button class="np-clear" onclick="clearNowPlaying()">✕</button>
@@ -46,6 +47,8 @@
         <button class="btn" onclick="openTimeline()">📅 TIMELINE</button>
         <button class="btn" onclick="openHeatmap()">🔥 HEATMAP</button>
         <button class="btn" onclick="openDataCheck()">🧹 DATA CHECK</button>
+        <button class="btn" onclick="openRoom()">📺 LISTENING ROOM</button>
+        <button class="btn" id="showroomBtn" onclick="toggleShowroom()">✨ SHOWROOM: OFF</button>
         <button class="btn" onclick="openShelf()">📦 SHELF</button>
         <button class="btn" onclick="openPrintModal()">🖨 PRINT BOOKLET</button>
         <button class="btn" onclick="openSettings()">⚙ SETTINGS (SYNC, CHANGER)</button>
@@ -59,11 +62,11 @@
 <div class="toolbar">
   <div class="toolbar-group">
     <span class="zoom-label">ZOOM</span>
-    <input type="range" class="zoom-slider" min="110" max="260" value="158" oninput="setZoom(this.value)" aria-label="Card size">
+    <input type="range" class="zoom-slider" id="zoomSlider" min="56" max="260" value="158" oninput="setZoom(this.value)" aria-label="Card size (also Ctrl+wheel or pinch)" title="Small = colour map of all slots · large = cards with tracklists">
   </div>
   <div class="toolbar-sep"></div>
   <div class="toolbar-group">
-    <select class="sort-select" onchange="applyFilters()" id="sortSelect" aria-label="Sort">
+    <select class="sort-select" onchange="uiApplyFilters()" id="sortSelect" aria-label="Sort">
       <option value="slot">SORT: SLOT #</option>
       <option value="artist">SORT: ARTIST A–Z</option>
       <option value="album">SORT: ALBUM A–Z</option>
@@ -72,8 +75,9 @@
       <option value="recent">SORT: RECENTLY PLAYED</option>
       <option value="added">SORT: RECENTLY ADDED</option>
     </select>
+    <select class="sort-select" id="viewSelect" onchange="setView(this.value)" aria-label="View"><option value="grid">VIEW: GRID</option><option value="list">VIEW: LIST</option><option value="ring">VIEW: CAROUSEL</option><option value="spines">VIEW: SPINES</option></select>
     <button class="btn" id="filterToggleBtn" onclick="toggleFilterPanel()" aria-expanded="false" aria-controls="filterPanel">⚲ FILTERS</button>
-    <button class="btn" id="listViewBtn" onclick="toggleListView()">☰ LIST</button>
+    <button class="btn" id="listViewBtn" onclick="toggleListView()" style="display:none">☰ LIST</button>
     <button class="btn" id="artFitBtn" onclick="toggleArtFit()" title="Crop covers to a square, or show the whole image">▣ FIT: CROP</button>
     <button class="btn" id="multiSelectBtn" onclick="toggleMultiSelect()">⬜ MULTI-SELECT</button>
     <button class="btn" id="detectDupsBtn" onclick="detectDuplicates()">🔍 FIND DUPES</button>
@@ -82,10 +86,10 @@
     <div class="stat-pill" id="filterCount"></div>
   </div>
   <div class="filter-panel" id="filterPanel">
-    <select class="filter-select" onchange="applyFilters()" id="artistFilter" aria-label="Filter by artist">
+    <select class="filter-select" onchange="uiApplyFilters()" id="artistFilter" aria-label="Filter by artist">
       <option value="">ALL ARTISTS</option>
     </select>
-    <select class="filter-select" onchange="applyFilters()" id="flagFilter" aria-label="Filter by flag">
+    <select class="filter-select" onchange="uiApplyFilters()" id="flagFilter" aria-label="Filter by flag">
       <option value="">ALL FLAGS</option>
       <option value="broken">BROKEN</option>
       <option value="loaned">LOANED</option>
@@ -93,9 +97,9 @@
       <option value="duplicate">DUPLICATE</option>
       <option value="wishlist">WISHLIST</option>
     </select>
-    <select class="filter-select" onchange="applyFilters()" id="genreFilter" aria-label="Filter by genre" style="display:none"><option value="">ALL GENRES</option></select>
-    <select class="filter-select" onchange="applyFilters()" id="decadeFilter" aria-label="Filter by decade" style="display:none"><option value="">ALL DECADES</option></select>
-    <select class="filter-select" onchange="applyFilters()" id="originFilter" aria-label="Filter by band origin" style="display:none"><option value="">ALL ORIGINS</option></select>
+    <select class="filter-select" onchange="uiApplyFilters()" id="genreFilter" aria-label="Filter by genre" style="display:none"><option value="">ALL GENRES</option></select>
+    <select class="filter-select" onchange="uiApplyFilters()" id="decadeFilter" aria-label="Filter by decade" style="display:none"><option value="">ALL DECADES</option></select>
+    <select class="filter-select" onchange="uiApplyFilters()" id="originFilter" aria-label="Filter by band origin" style="display:none"><option value="">ALL ORIGINS</option></select>
     <button class="btn" id="clearFiltersBtn" onclick="clearAllFilters()" style="display:none">✕ CLEAR FILTERS</button>
   </div>
   <div class="filter-pills" id="filterPills" style="display:none"></div>
@@ -103,6 +107,12 @@
 
 <div class="grid-container">
   <div class="grid" id="grid"></div>
+    <div class="ring-view" id="ringView" style="display:none">
+      <div class="ring-stage" id="ringStage" aria-label="Disc carousel"><div class="ring" id="ring"></div></div>
+      <div class="ring-readout" id="ringReadout"></div>
+      <div class="ring-hint">DRAG OR SCROLL TO TURN · CLICK A DISC TO BRING IT TO THE FRONT · ← → AND ENTER WORK TOO</div>
+    </div>
+    <div class="spine-view" id="spineView" style="display:none"><div class="spine-shelf" id="spineShelf"></div></div>
 </div>
 
 <!-- Fetch Progress Bar -->
@@ -116,9 +126,10 @@
 <!-- Info Modal -->
 <div class="modal-backdrop" id="infoModal" role="dialog" aria-modal="true" aria-label="Disc details" onclick="handleBackdropClick(event)">
   <div class="modal">
-    <button class="modal-close" onclick="closeModal()">✕</button>
+    <button class="modal-close" onclick="uiCloseModal()">✕</button>
     <div class="modal-header">
-      <div class="modal-art-wrap" id="modalArtWrap" onclick="openFullscreenArt()">
+      <div class="cd modal-cd" id="modalCd" aria-hidden="true"><div class="cd-face"><div class="cd-shine"></div><div class="cd-label blank"></div><div class="cd-hole"></div></div></div>
+            <div class="modal-art-wrap" id="modalArtWrap" onclick="openFullscreenArt()">
         <div class="modal-art-placeholder">💿</div>
       </div>
       <div class="modal-meta">
@@ -140,7 +151,8 @@
         </div>
         <div>
           <div class="modal-actions">
-            <button class="btn-sm green" id="playChangerBtn" onclick="playOnChanger()" style="display:none" title="Send this disc to the changer (Home Assistant)">▶ PLAY ON CHANGER</button>
+            <button class="btn-sm" type="button" onclick="openRoom(currentModalIndex)" title="Fullscreen listening-room view (for a TV or tablet)">📺 ROOM</button>
+                        <button class="btn-sm green" id="playChangerBtn" onclick="playOnChanger()" style="display:none" title="Send this disc to the changer (Home Assistant)">▶ PLAY ON CHANGER</button>
                         <button class="btn-sm green" id="nowPlayingBtn" onclick="setNowPlaying()">▶ NOW PLAYING</button>
             <button class="btn-sm" id="logPlayBtn" onclick="logPlay()">+ LOG PLAY</button>
             <button class="btn-sm gold" id="downloadArtBtn" onclick="downloadArt()" style="display:none">⬇ ART</button>
@@ -405,6 +417,33 @@ http:
         <div class="attn-hint">Sent fields: event (play / test), slot, slot_padded, artist, album. Without the CORS line the play command still goes through — the page just can't confirm it.</div>
       </details>
     </div>
+  </div>
+</div>
+
+<!-- Listening room -->
+<div class="room" id="roomModal" role="dialog" aria-modal="true" aria-label="Listening room">
+  <div class="room-bg" id="roomBg"></div>
+  <div class="room-inner">
+    <div class="room-cover-wrap">
+      <div class="cd room-cd" id="roomCd" aria-hidden="true"><div class="cd-face"><div class="cd-shine"></div><div class="cd-label blank"></div><div class="cd-hole"></div></div></div>
+      <img class="room-cover" id="roomCover" alt="">
+    </div>
+    <div class="room-meta">
+      <div class="room-label" id="roomLabel"></div>
+      <div class="room-artist" id="roomArtist"></div>
+      <div class="room-album" id="roomAlbum"></div>
+      <div class="room-tags" id="roomTags"></div>
+      <ol class="room-tracks" id="roomTracks"></ol>
+    </div>
+  </div>
+  <div class="room-bar">
+    <span class="room-clock" id="roomClock"></span>
+    <span class="room-keys">← → OTHER DISCS · F FULLSCREEN · ESC CLOSE</span>
+    <button class="btn" type="button" onclick="roomStep(-1)" aria-label="Previous disc">‹</button>
+    <button class="btn" type="button" onclick="roomStep(1)" aria-label="Next disc">›</button>
+    <button class="btn" type="button" id="roomPlayBtn" onclick="roomPlay()" style="display:none">▶ PLAY ON CHANGER</button>
+    <button class="btn" type="button" onclick="toggleRoomFullscreen()">⛶ FULLSCREEN</button>
+    <button class="btn" type="button" onclick="closeRoom()" aria-label="Close">✕</button>
   </div>
 </div>
 

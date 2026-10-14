@@ -41,8 +41,9 @@ function clearNowPlaying(){
 function updateNowPlayingBanner(){
   const b=$('nowPlayingBanner');
   const d=nowPlaying?discs[nowPlaying.index]:null;
-  if(!nowPlaying||isSlotEmpty(d)){b.classList.remove('visible');return;}
+  if(!nowPlaying||isSlotEmpty(d)){b.classList.remove('visible');refreshNpCd();applyAmbient();return;}
   b.classList.add('visible');
   $('npDisc').textContent='▶ DISC '+String(nowPlaying.index+1).padStart(3,'0');
   $('npText').textContent=(d[0]||'?')+' — '+(d[1]||'?');
+  refreshNpCd();applyAmbient();
 }
