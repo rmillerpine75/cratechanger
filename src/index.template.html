@@ -407,6 +407,12 @@
       <div class="attn-hint" style="margin-top:8px">The token stays in this browser only and is never put in backups or in the synced data. Every page on this address (…github.io) could read it, so don't host untrusted pages there.</div>
     </div>
     <div class="br-section">
+      <p>🔎 SONG IDENTIFICATION — in the listening room, 🔎 IDENTIFY records about 8 seconds from the microphone and sends that clip to <b>AudD</b>, a music-recognition service, to find out what's playing — even if it isn't one of your CDs. (🎤 LISTEN on its own never sends audio anywhere.)
+      Needs your own AudD API token: <a class="token-link" href="https://dashboard.audd.io/" target="_blank" rel="noopener">GET A TOKEN ↗</a> — the first 300 requests are free, then about $5 per 1,000. AUTO checks roughly once per song.</p>
+      <div class="move-row"><input type="password" id="auddToken" placeholder="AudD API token" autocomplete="off" spellcheck="false" aria-label="AudD API token"><button class="btn" type="button" onclick="saveAuddToken()">SAVE</button></div>
+      <div class="br-last-backup" id="auddStatus"></div>
+    </div>
+    <div class="br-section">
       <p>▶ PLAY ON CHANGER — a Home Assistant webhook. When it's set, a ▶ PLAY ON CHANGER button appears in the disc view.</p>
       <label class="share-opt">WEBHOOK URL <input type="text" id="hookUrl" placeholder="https://xxxx.ui.nabu.casa/api/webhook/your-long-random-id" spellcheck="false"></label>
       <label class="check-row"><input type="checkbox" id="hookMark" checked> ALSO MARK IT NOW PLAYING AND LOG A PLAY</label>
@@ -452,8 +458,11 @@ http:
       <div class="room-label" id="roomLabel"></div>
       <div class="room-artist" id="roomArtist"></div>
       <div class="room-album" id="roomAlbum"></div>
+      <div class="room-song" id="roomSong" style="display:none"></div>
       <div class="room-tags" id="roomTags"></div>
+      <div class="room-links" id="roomLinks"></div>
       <ol class="room-tracks" id="roomTracks"></ol>
+      <div class="room-id-status" id="roomIdStatus" aria-live="polite"></div>
     </div>
   </div>
   <div class="room-bar">
@@ -462,6 +471,8 @@ http:
     <button class="btn" type="button" onclick="roomStep(-1)" aria-label="Previous disc">‹</button>
     <button class="btn" type="button" onclick="roomStep(1)" aria-label="Next disc">›</button>
     <button class="btn" type="button" id="roomPlayBtn" onclick="roomPlay()" style="display:none">▶ PLAY ON CHANGER</button>
+    <button class="btn" type="button" id="roomIdBtn" onclick="identifyNow()" title="Record a few seconds and ask AudD what is playing (needs your AudD token)">🔎 IDENTIFY</button>
+    <button class="btn" type="button" id="roomAutoBtn" onclick="setIdentifyAuto(!ident.auto)" title="Identify each new song automatically while the room is open">AUTO: OFF</button>
     <button class="btn" type="button" id="roomListenBtn" onclick="toggleListening()" title="React to the music playing in the room (microphone, analysed on this device)">🎤 LISTEN</button>
     <button class="btn" type="button" onclick="toggleRoomFullscreen()">⛶ FULLSCREEN</button>
     <button class="btn" type="button" onclick="closeRoom()" aria-label="Close">✕</button>

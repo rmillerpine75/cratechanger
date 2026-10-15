@@ -1783,6 +1783,106 @@
       ok('dragging turns the city (and does not open anything)', Math.abs(city.rot - rot8 - .6) < .001 && !$('infoModal').classList.contains('open'));
       await resetAll8();
     }
+    {   // ═══ 18. SONG IDENTIFICATION (AudD) ═══
+      const resetAll9 = async () => {
+        discs = INITIAL_DATA.map(normalizeDisc); while (discs.length < 200) discs.push(null);
+        meta = {}; mbCache = {}; await clearCustomArt(); nowPlaying = null; mbMode = 'ok';
+        clearUndoHistory(); window.__ccForceVT = false;
+        if (ident.auto) await setIdentifyAuto(false);
+        if (listen.on) stopListening();
+        try { localStorage.removeItem(AUDD_KEY); localStorage.removeItem(AUDD_COUNT_KEY); } catch (e) {}
+        setView('grid'); buildGrid();
+      };
+      await resetAll9();
+      ID_CLIP_MS = 900;
+      const RED9 = (() => { const c = document.createElement('canvas'); c.width = c.height = 40; const x = c.getContext('2d'); x.fillStyle = '#c02525'; x.fillRect(0, 0, 40, 40); return c.toDataURL('image/png'); })();
+      const auddCalls = []; let auddReply = null;
+      const base9 = window.fetch;
+      window.fetch = (url, o) => {
+        const u = String(url); const du = decodeURIComponent(u);
+        if (u === 'https://api.audd.io/') { auddCalls.push(o && o.body); return Promise.resolve({ ok: true, status: 200, json: async () => auddReply }); }
+        if (u.includes('musicbrainz.org/ws/2/release/?query=') && du.includes('Songs From The Big Chair')) return reply({ releases: [{ id: 'rel-tff', score: 100, title: 'Songs From The Big Chair', date: '1985-02-25', country: 'GB', 'artist-credit': credit('Tears For Fears'), media: [{ format: 'CD' }] }] });
+        if (u.includes('/release/rel-tff?')) return reply({ title: 'Songs From The Big Chair', 'release-group': { id: 'rg-tff', 'primary-type': 'Album', 'first-release-date': '1985-02-25' }, 'artist-credit': [{ name: 'Tears For Fears', artist: { id: 'art-tff', name: 'Tears For Fears' } }], date: '1985-02-25', country: 'GB', media: [{ tracks: [{ position: 1, title: 'Shout', length: 393000 }, { position: 2, title: 'The Working Hour', length: 391000 }, { position: 3, title: 'Everybody Wants To Rule The World', length: 251000 }] }] });
+        return base9(url, o);
+      };
+      openRoom(); await wait(100);
+
+      // ── token ──
+      const r0 = await identifyNow();
+      ok('IDENTIFY without an AudD token explains and opens Settings — nothing is sent', r0 === null && auddCalls.length === 0 && $('settingsModal').classList.contains('open') && /AUDD TOKEN/.test($('toast').textContent));
+      ok('Settings says plainly that the clip is sent to AudD', /sends that clip to/.test($('settingsModal').textContent) && /NO TOKEN YET/.test($('auddStatus').textContent));
+      const al9 = alerts.length; $('auddToken').value = 'bad token!'; saveAuddToken();
+      ok('a malformed token is refused', alerts.length === al9 + 1 && !auddToken());
+      $('auddToken').value = 'abcdef0123456789abcdef0123456789'; saveAuddToken();
+      ok('a token is saved (field cleared, status confirms)', auddToken() === 'abcdef0123456789abcdef0123456789' && $('auddToken').value === '' && /TOKEN SAVED/.test($('auddStatus').textContent));
+      ok('the AudD token never goes into backups or sync', !JSON.stringify(buildBackupPayload()).includes('abcdef0123456789') && !syncPayload().data.includes('abcdef0123456789'));
+      closeSettings();
+
+      // ── one of your CDs ──
+      const tI9 = idxOf('Absu', 'Tara');
+      mbCache[keyOf(discs[tI9])] = { mbTried: true, v: 2, tracks: [{ num: 1, title: 'Tara', length: '5:00' }, { num: 2, title: 'Pillars of Mercury', length: '4:00' }], tags: ['1995'], artSources: [] };
+      auddReply = { status: 'success', result: { artist: 'Absu', title: 'Pillars of Mercury', album: 'Tara', timecode: '01:00', spotify: { duration_ms: 240000, external_urls: { spotify: 'https://open.spotify.com/track/abc' } } } };
+      const r1 = await identifyNow();
+      const fd = auddCalls[0]; const clip = fd && fd.get('file');
+      ok('IDENTIFY records a real clip from the microphone and sends it with your token', auddCalls.length === 1 && fd instanceof FormData && fd.get('api_token') === 'abcdef0123456789abcdef0123456789' && clip instanceof Blob && clip.size > 0 && /^audio\//.test(clip.type) && fd.get('return') === 'apple_music,spotify,musicbrainz', clip ? clip.type + ', ' + clip.size + ' bytes' : 'no clip');
+      ok('one of your CDs: the room switches to that disc', !!r1 && r1.slot === tI9 && roomIndex === tI9 && $('roomAlbum').textContent === 'Tara' && /IN YOUR CHANGER · SLOT/.test($('roomIdStatus').textContent));
+      ok('...marks it NOW PLAYING and logs one play', !!nowPlaying && nowPlaying.index === tI9 && getMeta(tI9).playHistory.length === 1);
+      const pl1 = $('roomTracks').querySelector('li.playing');
+      ok('...and highlights the song actually playing', !!pl1 && pl1.textContent.includes('Pillars of Mercury') && $('roomSong').textContent === '♪ Pillars of Mercury');
+      ok('...with links out (Spotify, Metal Archives), no wishlist button', /SPOTIFY/.test($('roomLinks').textContent) && /M-A/.test($('roomLinks').textContent) && !/WISHLIST/.test($('roomLinks').textContent));
+      await identifyNow();
+      ok('the next song on the same CD does not log a second play', getMeta(tI9).playHistory.length === 1);
+      ok('identifications are counted', auddCountToday() === 2);
+
+      // ── not in the changer ──
+      const tff = { status: 'success', result: { artist: 'Tears For Fears', title: 'Everybody Wants To Rule The World', album: 'Songs From The Big Chair', release_date: '2014-11-10', label: 'Mercury', timecode: '00:56', song_link: 'https://lis.tn/abc', apple_music: { url: 'https://music.apple.com/album/1', artwork: { url: RED9 } }, spotify: { duration_ms: 251000, external_urls: { spotify: 'https://open.spotify.com/track/x' } } } };
+      auddReply = tff;
+      const r2 = await identifyNow(); await wait(400);
+      ok('not one of your CDs: shown in the room anyway', !!r2 && r2.slot === -1 && roomIndex === null && /NOT IN YOUR CHANGER/.test($('roomLabel').textContent) && $('roomArtist').textContent === 'Tears For Fears' && $('roomAlbum').textContent === 'Songs From The Big Chair');
+      ok('...with Apple\'s artwork as the fallback when MusicBrainz has no cover', $('roomCover').src === RED9 && $('roomCover').style.visibility !== 'hidden' && !$('roomCover').classList.contains('pending'));
+      const BLUE9 = URL.createObjectURL(await new Promise(res => { const c = document.createElement('canvas'); c.width = c.height = 40; const x = c.getContext('2d'); x.fillStyle = '#2040d0'; x.fillRect(0, 0, 40, 40); c.toBlob(res, 'image/png'); }));   // a stand-in for a Cover Art Archive image (fetch is stubbed here)
+      mbCache['Tears For Fears|The Hurting'] = { mbTried: true, v: 2, mbid: 'rel-hurt', year: '1983', tags: ['1983'], tracks: [{ num: 1, title: 'Mad World', length: '3:35' }], artSources: [BLUE9] };
+      auddReply = { status: 'success', result: Object.assign({}, tff.result, { album: 'The Hurting', title: 'Mad World' }) };
+      await identifyNow(); await wait(1600);   // a cover is already showing, so the new one arrives via the ~1 s particle dissolve
+      ok('...but the album\'s own cover from MusicBrainz wins over Apple\'s (which can be a compilation)', $('roomCover').src === BLUE9 && $('roomAlbum').textContent === 'The Hurting', $('roomCover').src.slice(0, 40));
+      auddReply = tff; await identifyNow(); await wait(300);
+      ok('...tracklist and ORIGINAL year from MusicBrainz (1985, not the 2014 reissue)', $('roomTracks').textContent.includes('Shout') && $('roomTags').textContent.startsWith('1985') && $('roomTags').textContent.includes('Mercury'), $('roomTags').textContent);
+      const pl2 = $('roomTracks').querySelector('li.playing');
+      ok('...the playing song highlighted', !!pl2 && pl2.textContent.includes('Everybody Wants'));
+      ok('...links: Apple Music, Spotify, all services, ♥ wishlist', ['APPLE MUSIC', 'SPOTIFY', 'ALL SERVICES', 'WISHLIST'].every(k => $('roomLinks').textContent.includes(k)));
+      opened.length = 0; $('roomLinks').querySelector('[data-room-link]').click();
+      ok('links open in a new tab', opened[0] === 'https://music.apple.com/album/1');
+      ok('your own Now Playing and play counts are untouched', nowPlaying.index === tI9 && getMeta(tI9).playHistory.length === 1);
+      $('roomLinks').querySelector('[data-room-wish]').click();
+      const wi9 = discs.findIndex(d => d && d[1] === 'Songs From The Big Chair');
+      ok('♥ adds it to your wishlist (undoable)', wi9 >= 0 && isWish(wi9) && discs[wi9][0] === 'Tears For Fears' && /WISHLISTED/.test($('undoText').textContent));
+      $('roomLinks').querySelector('[data-room-wish]').click();
+      ok('...only once', discs.filter(d => d && d[1] === 'Songs From The Big Chair').length === 1 && /ALREADY/.test($('toast').textContent));
+
+      // ── no match / errors ──
+      auddReply = { status: 'success', result: null };
+      ok('no match is reported', (await identifyNow()) === null && /NO MATCH/.test($('roomIdStatus').textContent));
+      auddReply = { status: 'error', error: { error_code: 901, error_message: 'Recognition failed: no requests left' } };
+      ok('AudD errors are shown plainly', (await identifyNow()) === null && /NO REQUESTS LEFT/.test($('roomIdStatus').textContent) && /#901/.test($('roomIdStatus').textContent));
+
+      // ── AUTO ──
+      ok('AUTO schedules the next check for just after the song ends', planNextIdentify({ durationMs: 240000, timecode: 60 }, 0) === 240000 - 60000 - ID_CLIP_MS + 8000 && planNextIdentify(null, 0) === 240000);
+      ident.gap = { quietSince: 0, armed: false, loudSince: 0 };
+      const seq = [[.2, 0], [.001, 100], [.001, 1500], [.2, 1600], [.2, 4000], [.2, 6700]].map(([lv, t]) => songChangeDetector(lv, t));
+      ok('AUTO spots a new song after a silence gap', JSON.stringify(seq) === JSON.stringify([false, false, false, false, false, true]), JSON.stringify(seq));
+      auddReply = tff; const before9 = auddCalls.length;
+      ok('AUTO turns on (starting the microphone) and identifies right away', (await setIdentifyAuto(true)) === true && ident.auto && listen.on && $('roomAutoBtn').textContent === 'AUTO: ON');
+      await wait(ID_CLIP_MS + 800);
+      ok('...the first identification is sent', auddCalls.length === before9 + 1);
+      closeRoom(); await wait(50);
+      ok('closing the room stops AUTO and the microphone it started', !ident.auto && !listen.on && $('roomAutoBtn').textContent === 'AUTO: OFF');
+      try { localStorage.removeItem(AUDD_KEY); } catch (e) {}
+      openRoom(); await wait(50);
+      ok('AUTO refuses without a token', (await setIdentifyAuto(true)) === false && !ident.auto && !listen.on);
+      closeSettings(); closeRoom();
+      window.fetch = base9; ID_CLIP_MS = 8000;
+      await resetAll9();
+    }
   } catch (e) {
     R.push('FAIL harness exception: ' + (e && e.stack || e));
   }

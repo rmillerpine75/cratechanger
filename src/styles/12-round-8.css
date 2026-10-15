@@ -122,3 +122,18 @@ body.listening .slot.np-tile{box-shadow:0 0 calc(8px + var(--beat,0)*30px) var(-
 .city-tip span{font:.55rem 'Share Tech Mono',monospace;color:var(--muted)}
 
 @media (prefers-reduced-motion:reduce){.c3-case,.jc-lid{transition:none!important}.reel-track{transition:none!important}}
+
+/* ── song identification in the listening room ── */
+.room-song{font-family:'Share Tech Mono',monospace;font-size:clamp(.8rem,1.4vw,1.1rem);letter-spacing:2px;margin-top:1.2vh;color:#fff;opacity:.92}
+.room-links{display:flex;gap:8px;flex-wrap:wrap;margin-top:1.4vh}
+.room-links:empty{display:none}
+.room-links .btn{background:rgba(0,0,0,.35);color:#f2efe9;border-color:rgba(255,255,255,.3);font-size:.6rem;padding:5px 9px}
+.room-id-status{margin-top:1.6vh;font-family:'Share Tech Mono',monospace;font-size:.62rem;letter-spacing:1px;color:#f2efe9;opacity:.8;min-height:1em}
+.room-tracks li.playing{color:#fff;background:rgba(0,0,0,.5);box-shadow:inset 3px 0 0 var(--disc-accent,var(--gold));border-radius:2px;font-weight:600}
+.room-tracks li.playing .rt-title::after{content:'  ♪';color:var(--disc-accent,var(--gold))}
+#roomIdBtn.busy{border-color:var(--gold);color:var(--gold);animation:idPulse 1s ease-in-out infinite}
+@keyframes idPulse{50%{opacity:.55}}
+#roomAutoBtn.on{border-color:var(--green);color:var(--green)}
+@media (prefers-reduced-motion:reduce){#roomIdBtn.busy{animation:none}}
+.room-cover{transition:opacity .35s}
+.room-cover.pending{opacity:.2}

@@ -361,10 +361,12 @@ function openRoom(i){
 }
 function closeRoom(){
   $('roomModal').classList.remove('open');clearInterval(roomClockT);
+  if(ident.auto)setIdentifyAuto(false);ident.external=null;setIdStatus('');
   try{roomWake&&roomWake.release()}catch(e){}roomWake=null;
   if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});
 }
 function renderRoom(i,animate){
+  ident.external=null;$('roomSong').style.display='none';renderRoomLinks(null);$('roomCover').classList.remove('pending');
   roomIndex=i;const d=discs[i];const e=mbCache[keyOf(d)];const m=getMeta(i);
   const playing=!!(nowPlaying&&nowPlaying.index===i);
   $('roomLabel').textContent=(playing?'NOW PLAYING':'DISC')+' · '+slotNum(i);
