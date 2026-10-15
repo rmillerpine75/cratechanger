@@ -210,7 +210,13 @@ function bookletHtml(kind){
   const by=(x,y)=>String(x||'').localeCompare(String(y||''),undefined,{sensitivity:'base'});
   const title=`CrateChanger — ${rows.length} discs — ${new Date().toLocaleDateString()}`;
   let css,body;
-  if(kind==='grid'){
+  if(kind==='emblems'){
+    const cells=rows.map(r=>`<div class="e">${emblemSvg(r.i,170)}<div class="n">${slotNum(r.i)}</div><div class="t">${escH(r.d[0])} — ${escH(r.d[1])}</div></div>`);
+    const pages=[];for(let k=0;k<cells.length;k+=20)pages.push(`<section class="page">${cells.slice(k,k+20).join('')}</section>`);
+    css='@page{size:letter;margin:9mm}body{font-family:Arial,sans-serif;margin:0;background:#fff}.page{display:grid;grid-template-columns:repeat(4,1fr);gap:3mm;break-after:page;page-break-after:always}.page:last-child{break-after:auto;page-break-after:auto}'+
+      '.e{text-align:center;break-inside:avoid}.e svg{width:100%;height:auto;display:block;-webkit-print-color-adjust:exact;print-color-adjust:exact}.n{font:bold 10pt Arial}.t{font-size:6.5pt;line-height:1.2;height:2.4em;overflow:hidden}';
+    body=pages.join('');
+  }else if(kind==='grid'){
     // slot order: that's how the changer's remote works. 16 per page.
     const cells=rows.map(r=>{
       const src=customArt.get(r.i)||autoSources(mbCache[keyOf(r.d)])[0]||'';

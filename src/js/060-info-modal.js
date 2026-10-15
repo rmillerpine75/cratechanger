@@ -96,6 +96,7 @@ function renderArt(sources,key){
 
 function renderModalData(data,artist,album,idx){
   $('loadingPulse').style.display='none';
+  if(currentModalIndex!==null)renderModalEmblem(currentModalIndex);
   const slot=idx!==undefined?idx:currentModalIndex;
   const key=artist+'|'+album;
   const ov=(slot!==null&&slot!==undefined)?getOverride(slot):null;

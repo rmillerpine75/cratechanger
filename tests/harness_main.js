@@ -1622,6 +1622,167 @@
       ok('in between, the normal grid', !document.body.classList.contains('zoom-map') && !document.body.classList.contains('zoom-cards'));
       await resetAll7();
     }
+    {   // ═══ 17. ROUND-8 VISUALS ═══
+      const resetAll8 = async () => {
+        discs = INITIAL_DATA.map(normalizeDisc); while (discs.length < 200) discs.push(null);
+        meta = {}; mbCache = {}; await clearCustomArt(); nowPlaying = null; mbMode = 'ok';
+        $('searchInput').value = ''; ['artistFilter', 'flagFilter', 'genreFilter', 'decadeFilter', 'originFilter'].forEach(id => { $(id).value = ''; });
+        $('sortSelect').value = 'slot'; clearUndoHistory(); window.__ccForceVT = false;
+        if (listen.on) stopListening();
+        setView('grid'); buildGrid();
+      };
+      await resetAll8();
+      const solid8 = hex => { const c = document.createElement('canvas'); c.width = c.height = 48; const x = c.getContext('2d'); x.fillStyle = hex; x.fillRect(0, 0, 48, 48); return c.toDataURL('image/png'); };
+      const RED = solid8('#d02020'), BLUE = solid8('#2040d0');
+      const owned8 = () => discs.map((d, i) => i).filter(i => !isSlotEmpty(discs[i]) && !isWish(i));
+      const tracks8 = n => ({ mbTried: true, v: 2, tracks: Array.from({ length: n }, (_, k) => ({ num: k + 1, title: 'T' + (k + 1), length: (2 + k % 5) + ':' + String(10 + k).padStart(2, '0') })), tags: [], artSources: [] });
+
+      // ── 1. listening (Chrome's fake microphone plays a test tone) ──
+      ok('listening is off by default', !listen.on && $('listenPill').style.display === 'none');
+      const started = await startListening();
+      ok('microphone opens and the analyser runs', started === true && listen.on && !!listen.an && document.body.classList.contains('listening'), String(started));
+      ok('a LISTENING pill with a live level meter appears', $('listenPill').style.display !== 'none' && /STOP/.test($('listenMenuBtn').textContent));
+      const rot0 = document.documentElement.style.getPropertyValue('--cd-rot');
+      await wait(1500);
+      ok('the music is analysed continuously (frames, live level, real signal)', listen.frames > 10 && document.documentElement.style.getPropertyValue('--lv') !== '' && listen.peak > .02, `frames ${listen.frames}, peak ${listen.peak.toFixed(3)}, beats ${listen.beats}`);
+      ok('the CD turns with the music', document.documentElement.style.getPropertyValue('--cd-rot') !== rot0);
+      const av = $('aurora'); const ad = av.getContext('2d').getImageData(0, 0, av.width, av.height).data;
+      let lit = 0; for (let k = 3; k < ad.length; k += 4) if (ad[k] > 0) lit++;
+      ok('the aurora is drawn from the live spectrum', av.width > 0 && lit > 100, lit + ' lit pixels');
+      mbCache[keyOf(discs[2])] = tracks8(8);
+      openRoom(2); await wait(2500);
+      ok('in the listening room the tracklist highlight steps with the beat', listen.beats === 0 || $('roomTracks').querySelectorAll('li.flow').length === 1, `beats ${listen.beats}`);
+      const tracksLive = listen.stream.getTracks();
+      stopListening();
+      ok('STOP releases the microphone and clears the effects', !listen.on && tracksLive.every(t => t.readyState === 'ended') && !document.body.classList.contains('listening') && document.documentElement.style.getPropertyValue('--lv') === '' && $('listenPill').style.display === 'none');
+      closeRoom();
+
+      // ── 2. dissolve + slot machine ──
+      const im = document.createElement('img'); im.style.cssText = 'position:fixed;left:10px;top:10px;width:120px;height:120px'; document.body.appendChild(im);
+      im.src = RED; await wait(100);
+      window.__ccForceVT = true;
+      const dc0 = dissolveCount;
+      const how = await dissolveImage(im, BLUE);
+      ok('covers dissolve into each other as particles', how === 'particles' && im.src === BLUE && dissolveCount === dc0 + 1 && !document.querySelector('.dissolve-canvas') && im.style.visibility === '');
+      const how2 = await dissolveImage(im, 'https://unreachable.invalid/cover.jpg');
+      ok('covers whose pixels can\'t be read just swap', how2 === 'plain');
+      window.__ccForceVT = false;
+      const mm8 = window.matchMedia; window.matchMedia = q => ({ matches: /reduce/.test(q), media: q, addEventListener() {}, removeEventListener() {} });
+      im.src = RED; await wait(50);
+      ok('"reduce motion": instant swap, no particles', (await dissolveImage(im, BLUE)) === 'instant');
+      window.matchMedia = mm8; im.remove();
+      await putCustomArt(5, RED); await putCustomArt(6, BLUE);
+      window.__ccForceVT = true;
+      openRoom(5); await wait(300);
+      const dc1 = dissolveCount; roomStep(1); await wait(1700);
+      ok('stepping discs in the listening room dissolves the covers', roomIndex === 6 && $('roomCover').src === BLUE && dissolveCount === dc1 + 1);
+      closeRoom();
+      const pool = randomPool();
+      const pickP = uiPickRandom(); await wait(200);
+      ok('RANDOM spins a reel of covers first', $('reel').classList.contains('open') && $('reelTrack').children.length === 23);
+      const pick = await pickP;
+      ok('...and lands on a playable, matching disc which opens', pool.includes(pick) && $('infoModal').classList.contains('open') && currentModalIndex === pick && !$('reel').classList.contains('open'));
+      closeModal(); window.__ccForceVT = false;
+
+      // ── 3. the 3D changer ──
+      await resetAll8();
+      getMeta(7).flags = ['loaned'];
+      setView('changer');
+      ok('3D changer view: one jewel case per slot', ch.items.length === discs.length && $('changerView').style.display === '' && $('grid').style.display === 'none');
+      ok('empty slots are empty pockets, loaned discs leave a gap', ch.items.filter(e => e.classList.contains('empty')).length === discs.filter((d, i) => isSlotEmpty(d) && !isWish(i)).length && ch.items[7].classList.contains('loaned') && !ch.items[7].querySelector('img'));
+      changerTurnTo(10, true);
+      const step = 360 / discs.length;
+      ok('turning brings a slot to the front, lifted out', ch.sel === 10 && ch.items[10].classList.contains('sel') && $('c3World').style.transform.includes(`rotateY(${-10 * step}deg)`) && $('c3Readout').textContent.includes('011'));
+      ok('cases facing you are lit, the back of the ring is in shadow', parseFloat(ch.items[10].style.getPropertyValue('--shade')) > .95 && parseFloat(ch.items[110].style.getPropertyValue('--shade')) < .35);
+      document.activeElement && document.activeElement.blur && document.activeElement.blur();
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true })); await wait(50);
+      ok('→ turns the carousel', ch.sel === 11);
+      ch.items[13].click(); await wait(50);
+      ok('clicking a case lifts it out', ch.sel === 13);
+      ch.items[13].click(); await wait(100);
+      ok('clicking the lifted case opens the disc', $('infoModal').classList.contains('open') && currentModalIndex === 13);
+      closeModal();
+
+      // ── 4. emblems ──
+      await resetAll8();
+      mbCache[keyOf(discs[0])] = tracks8(9); mbCache[keyOf(discs[1])] = tracks8(9);
+      const e0 = emblemSvg(0), e0b = emblemSvg(0), e1 = emblemSvg(1);
+      const doc0 = new DOMParser().parseFromString(e0, 'image/svg+xml');
+      ok('an emblem is valid SVG', !doc0.querySelector('parsererror') && doc0.documentElement.nodeName === 'svg');
+      ok('the same album always gets the same emblem', e0 === e0b);
+      ok('no two albums share one (same track count, different emblem)', e0 !== e1);
+      ok('spokes = tracks', doc0.documentElement.getAttribute('data-spokes') === '9' && doc0.querySelectorAll('line').length === 9);
+      ok('no tracklist yet: dashed "provisional" spokes', emblemSvg(2).includes('data-provisional="true"') && emblemSvg(2).includes('stroke-dasharray="3 3"'));
+      discs[3] = ['<scr' + 'ipt>alert(1)</scr' + 'ipt>', 'x" onload="y'];   // split so the runner's <script> embedding isn't closed early
+      const eh = emblemSvg(3); const dh = new DOMParser().parseFromString(eh, 'image/svg+xml');
+      ok('hostile titles cannot break or script an emblem', !dh.querySelector('parsererror') && !dh.querySelector('script') && !eh.includes('<scr' + 'ipt>'));
+      discs[3] = INITIAL_DATA.map(normalizeDisc)[3];
+      setView('emblems');
+      ok('emblem wall: one emblem per disc', document.querySelectorAll('#emblemWall .emb-tile').length === discs.filter(d => !isSlotEmpty(d)).length);
+      document.querySelector('#emblemWall .emb-tile[data-index="1"]').click(); await wait(100);
+      const mes = $('modalEmblem').querySelector('svg');
+      ok('clicking an emblem opens the disc, which shows its emblem too', currentModalIndex === 1 && !!mes && mes.getAttribute('data-spokes') === '9' && mes.getAttribute('aria-label').includes(discs[1][1]) && mes.getAttribute('width') === '58');
+      const oc8 = URL.createObjectURL, ock8 = HTMLAnchorElement.prototype.click; let blob8 = null, dl8 = '';
+      URL.createObjectURL = b => { blob8 = b; return 'blob:x'; }; HTMLAnchorElement.prototype.click = function () { dl8 = this.download; };
+      downloadEmblem();
+      URL.createObjectURL = oc8; HTMLAnchorElement.prototype.click = ock8;
+      ok('the emblem downloads as an SVG file', !!blob8 && blob8.type === 'image/svg+xml' && /^emblem-002-.+\.svg$/.test(dl8), dl8);
+      closeModal();
+      let w8 = ''; openRet = { document: { write: s => { w8 += s; }, close() {} } };
+      printBooklet('emblems');
+      ok('print: EMBLEM WALL, 20 per page', (w8.match(/<section class="page">/g) || []).length === Math.ceil(owned8().length / 20) && (w8.match(/<svg /g) || []).length === owned8().length);
+      openRet = null; setView('grid');
+
+      // ── 5. the jewel case ──
+      mbCache[keyOf(discs[4])] = tracks8(6); await putCustomArt(4, RED); getMeta(4).barcode = '123456789012';
+      await openCase(4); await wait(50);
+      ok('the jewel case opens with the cover in the lid', $('caseModal').classList.contains('open') && $('jcCover').src === RED);
+      ok('back insert = tracklist + barcode, spine = artist · album', $('jcInsert').querySelectorAll('.jci-tracks li').length === 6 && $('jcInsert').textContent.includes('123456789012') && $('jcSpine').textContent.includes(discs[4][1]));
+      ok('the inside of the lid carries the album\'s emblem', !!$('jcInside').querySelector('svg'));
+      ok('closed: the disc is hidden behind the lid', getComputedStyle(document.querySelector('.jc-tray')).visibility === 'hidden');
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true })); await wait(60);
+      ok('Space opens it: lid swings, disc shows', $('jcase').classList.contains('opened') && getComputedStyle(document.querySelector('.jc-tray')).visibility === 'visible' && $('jcOpenBtn').textContent === 'CLOSE THE CASE');
+      const st8 = $('caseStage'); const ry0 = jc.ry;
+      st8.dispatchEvent(new PointerEvent('pointerdown', { clientX: 400, clientY: 300, pointerId: 7, bubbles: true }));
+      st8.dispatchEvent(new PointerEvent('pointermove', { clientX: 480, clientY: 300, pointerId: 7, bubbles: true }));
+      st8.dispatchEvent(new PointerEvent('pointerup', { clientX: 480, clientY: 300, pointerId: 7, bubbles: true }));
+      const ryShown = parseFloat((/rotateY\(([-\d.]+)deg\)/.exec($('jcase').style.transform) || [])[1]);
+      ok('dragging turns the case', Math.abs(jc.ry - ry0 - 40) < .5 && Math.abs(ryShown - jc.ry) < .1, `ry ${ry0} -> ${jc.ry}, shown ${ryShown}`);
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true })); await wait(50);
+      ok('Esc puts the case down', !$('caseModal').classList.contains('open'));
+
+      // ── 6. collection city ──
+      await resetAll8();
+      owned8().forEach((i, k) => { if (k % 4 === 0) getMeta(i).playHistory = Array.from({ length: 1 + k % 7 }, () => new Date().toISOString()); });
+      getMeta(owned8()[5]).flags = ['loaned'];
+      setView('city');
+      ok('city: one lot per disc', city.model.lots.length === owned8().length && $('cityView').style.display === '');
+      ok('without genre data the districts are decades (and the key says so)', city.groupBy === 'decade' && /DECADES/.test($('cityKey').textContent));
+      owned8().forEach((i, k) => { getMeta(i).override = { genres: [k % 2 ? 'black metal' : 'death metal'] }; });
+      renderCity();
+      ok('with genres the districts are genres', city.groupBy === 'genre' && city.model.labels.length === 2);
+      const busy = owned8()[0], quiet = owned8()[1];
+      const lotOf = i => city.model.lots.find(l => l.i === i);
+      ok('tower height follows plays', lotOf(busy).h > lotOf(quiet).h);
+      ok('a loaned disc is an empty lot', lotOf(owned8()[5]).loaned === true);
+      setCityHeight('year');
+      ok('height can follow release year instead', city.heightBy === 'year' && /RELEASE YEAR/.test($('cityKey').textContent));
+      setCityHeight('plays');
+      const cv8 = $('cityCanvas'); const W8 = cv8.clientWidth, H8 = cv8.clientHeight; const L = city.model.lots.filter(l => !l.loaned && getMeta(l.i).playHistory.length).sort((p, q) => q.depth - p.depth)[0]; const front8 = L.i;
+      const [px8, py8] = cityProject(L.x + .5, L.y + .5, L.h, W8, H8);
+      ok('pointing at a tower\'s roof finds that disc', cityHitTest(px8, py8 + 1) === front8, cityHitTest(px8, py8 + 1) + ' vs ' + front8);
+      const rc = cv8.getBoundingClientRect();
+      cv8.dispatchEvent(new PointerEvent('pointerdown', { clientX: rc.left + px8, clientY: rc.top + py8 + 1, pointerId: 9, bubbles: true }));
+      cv8.dispatchEvent(new PointerEvent('pointerup', { clientX: rc.left + px8, clientY: rc.top + py8 + 1, pointerId: 9, bubbles: true }));
+      ok('clicking a tower opens the disc', $('infoModal').classList.contains('open') && currentModalIndex === front8);
+      closeModal();
+      const rot8 = city.rot;
+      cv8.dispatchEvent(new PointerEvent('pointerdown', { clientX: 300, clientY: 300, pointerId: 10, bubbles: true }));
+      cv8.dispatchEvent(new PointerEvent('pointermove', { clientX: 400, clientY: 300, pointerId: 10, bubbles: true }));
+      cv8.dispatchEvent(new PointerEvent('pointerup', { clientX: 400, clientY: 300, pointerId: 10, bubbles: true }));
+      ok('dragging turns the city (and does not open anything)', Math.abs(city.rot - rot8 - .6) < .001 && !$('infoModal').classList.contains('open'));
+      await resetAll8();
+    }
   } catch (e) {
     R.push('FAIL harness exception: ' + (e && e.stack || e));
   }

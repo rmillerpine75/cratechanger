@@ -1,0 +1,124 @@
+
+/* ───────── round-8 visuals ───────── */
+/* ── reacting to the room ── */
+.aurora{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;opacity:0;transition:opacity .8s;filter:blur(14px)}
+body.listening .aurora{opacity:.6}
+body.listening .toolbar{position:relative;z-index:20}
+body.listening .grid-container{position:relative;z-index:1}
+.room-aurora{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;opacity:0;transition:opacity .8s;filter:blur(10px);mix-blend-mode:screen}
+body.listening .room-aurora{opacity:.7}
+body.listening .room-cover,body.listening #infoModal .modal-art,body.listening .slot.np-tile .slot-art{transform:scale(calc(1 + var(--bass,0)*.045 + var(--beat,0)*.025));transition:transform .07s linear}
+body.listening .cd.spinning .cd-face{animation:none!important;transform:rotate(var(--cd-rot,0deg))}
+body.listening .room-tracks li{transition:background .25s,box-shadow .25s}
+/* white on a dark pill: readable whatever colour the aurora is */
+body.listening .room-tracks li.flow{color:#fff;background:rgba(0,0,0,.45);box-shadow:inset 3px 0 0 var(--disc-accent,var(--gold));border-radius:2px}
+body.listening .slot.np-tile{box-shadow:0 0 calc(8px + var(--beat,0)*30px) var(--tile-glow,var(--accent))}
+.listen-pill{cursor:pointer;display:flex;align-items:center;gap:6px}
+.lv-meter{display:inline-block;width:42px;height:6px;background:var(--surface3);overflow:hidden}
+.lv-meter i{display:block;height:100%;width:calc(var(--lv,0) * 100%);background:var(--green);transition:width .06s linear}
+#roomListenBtn.active{border-color:var(--green);color:var(--green)}
+
+/* ── RANDOM as a slot machine ── */
+.reel{position:fixed;inset:0;z-index:9780;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.72);backdrop-filter:blur(4px)}
+.reel.open{display:flex}
+.reel-window{position:relative;width:min(240px,60vw);height:min(240px,60vw);overflow:hidden;border:2px solid var(--gold);box-shadow:0 0 0 6px rgba(0,0,0,.6),0 0 60px rgba(212,160,23,.35)}
+.reel-track{will-change:transform}
+.reel-cell{position:relative;width:min(240px,60vw);height:min(240px,60vw);background:var(--surface2);display:flex;align-items:flex-end}
+.reel-cell img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.reel-cell span{position:relative;margin:6px;font-family:'Share Tech Mono',monospace;font-size:.7rem;background:rgba(0,0,0,.7);color:#fff;padding:2px 6px}
+.reel.spinning .reel-track{filter:blur(2.5px)}
+.reel.landed .reel-window{animation:reelLand .45s ease}
+@keyframes reelLand{0%{transform:scale(1)}40%{transform:scale(1.08)}100%{transform:scale(1)}}
+.reel-glass{position:absolute;width:min(240px,60vw);height:min(240px,60vw);pointer-events:none;background:linear-gradient(180deg,rgba(0,0,0,.55),transparent 22%,transparent 78%,rgba(0,0,0,.55))}
+
+/* ── inside the changer (CSS 3D) ── */
+.c3-stage{position:relative;height:min(66vh,640px);min-height:380px;perspective:1500px;perspective-origin:50% 26%;overflow:hidden;cursor:grab;user-select:none;touch-action:pan-y;
+  background:radial-gradient(ellipse at 50% 88%,rgba(255,255,255,.07),transparent 55%)}
+.c3-stage:active{cursor:grabbing}
+.c3-world{position:absolute;left:50%;top:62%;width:0;height:0;transform-style:preserve-3d;will-change:transform}
+.c3-case{position:absolute;left:-60px;top:-106px;width:120px;height:106px;transform-style:preserve-3d;transition:transform .55s cubic-bezier(.2,.8,.2,1);filter:brightness(var(--shade,1));cursor:pointer}
+.c3-front,.c3-back{position:absolute;inset:0;background:linear-gradient(135deg,#1b1b22,#0e0e12);border:1px solid rgba(255,255,255,.12);overflow:hidden;backface-visibility:hidden}
+.c3-front{transform:translateZ(7px)}
+.c3-back{transform:rotateY(180deg) translateZ(7px);background:linear-gradient(135deg,#15151b,#09090c)}
+.c3-front img{width:100%;height:100%;object-fit:cover;display:block}
+.c3-front::after{content:'';position:absolute;inset:0;background:linear-gradient(115deg,rgba(255,255,255,.22),transparent 38%,transparent 62%,rgba(255,255,255,.08))}
+.c3-spine{position:absolute;top:0;right:-7px;width:14px;height:100%;transform:rotateY(90deg);background:linear-gradient(90deg,#26262e,#3a3a46 50%,#26262e);display:flex;flex-direction:column;align-items:center;justify-content:space-between;overflow:hidden;border:1px solid rgba(255,255,255,.1)}
+.c3-spine span{writing-mode:vertical-rl;font-size:7px;color:#ddd;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-height:82px;padding-top:4px}
+.c3-spine b{font:normal 6px 'Share Tech Mono',monospace;color:var(--gold);padding-bottom:3px}
+.c3-case.empty .c3-front,.c3-case.empty .c3-back{background:transparent;border:1px dashed rgba(255,255,255,.12)}
+.c3-case.empty .c3-spine{background:transparent;border:1px dashed rgba(255,255,255,.1)}
+.c3-case.empty .c3-front::after{display:none}
+.c3-case.loaned .c3-front,.c3-case.loaned .c3-back{background:transparent;border:1px dashed var(--accent)}
+.c3-case.loaned .c3-spine{background:rgba(200,41,46,.25)}
+.c3-case.wish .c3-front{border-color:var(--purple)}
+.c3-case.dim{filter:grayscale(1) brightness(calc(var(--shade,1) * .4))}
+.c3-case.sel{filter:none}
+.c3-case.sel .c3-front{box-shadow:0 0 0 2px var(--gold),0 0 50px rgba(212,160,23,.35)}
+.c3-pile{position:absolute;left:0;top:0;transform-style:preserve-3d}
+.c3-flat{position:absolute;left:-55px;top:-10px;width:110px;height:98px;transform:rotateX(90deg) translateZ(calc(var(--k) * 13px));background:#202028;border:1px solid rgba(255,255,255,.15)}
+.c3-flat i{position:absolute;inset:4px;background:#101015 center/cover no-repeat}
+.c3-pile-label{position:absolute;left:-60px;top:-200px;width:120px;text-align:center;font:10px 'Share Tech Mono',monospace;color:var(--muted)}
+
+/* ── emblems ── */
+.emb-intro{font-family:'Share Tech Mono',monospace;font-size:.58rem;letter-spacing:1px;color:var(--muted);margin:4px 0 14px;line-height:1.6}
+.emb-wall{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.emb-tile{display:flex;flex-direction:column;align-items:stretch;padding:0;border:1px solid var(--border);background:#0b0b0e;cursor:pointer;color:#e8e6e1;position:relative;transition:transform .2s,border-color .2s}
+.emb-tile svg{width:100%;height:auto;display:block}
+.emb-tile:hover,.emb-tile:focus-visible{transform:translateY(-3px);border-color:var(--gold)}
+.emb-num{position:absolute;left:6px;top:5px;font:.55rem 'Share Tech Mono',monospace;color:#8a8a96}
+.emb-title{font-size:.68rem;padding:6px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left;border-top:1px solid #222230}
+.emb-tile.dim{opacity:.25}
+.emb-tile.wish{border-style:dashed;border-color:var(--purple)}
+.modal-emblem{position:absolute;top:46px;right:18px;width:58px;height:58px;cursor:pointer;border:1px solid var(--border);z-index:3;transition:transform .2s}
+.modal-emblem:hover,.modal-emblem:focus-visible{transform:scale(1.08);border-color:var(--gold)}
+.modal-emblem svg{display:block;width:100%;height:100%}
+@media (max-width:760px){.modal-emblem{display:none}}
+
+/* ── the jewel case (CSS 3D) ── */
+.case-modal{position:fixed;inset:0;z-index:9720;display:none;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 40%,#25252e,#050506 70%)}
+.case-modal.open{display:flex}
+.case-stage{width:100%;flex:1;display:flex;align-items:center;justify-content:center;perspective:1300px;cursor:grab;touch-action:none;user-select:none}
+.case-stage:active{cursor:grabbing}
+.jcase{--W:300px;--H:264px;--D:22px;position:relative;width:var(--W);height:var(--H);transform-style:preserve-3d}
+.jc-face{position:absolute;backface-visibility:hidden}
+.jc-back{inset:0;transform:rotateY(180deg) translateZ(calc(var(--D) / 2));background:#ece9e2;color:#111;overflow:hidden}
+.jc-left{top:0;left:calc(50% - var(--D) / 2);width:var(--D);height:100%;transform:rotateY(-90deg) translateZ(calc(var(--W) / 2));background:linear-gradient(90deg,#1a1a1f,#2c2c35,#1a1a1f);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.jc-left span{writing-mode:vertical-rl;transform:rotate(180deg);font:600 9px 'Share Tech Mono',monospace;color:#ddd;letter-spacing:1px;white-space:nowrap;overflow:hidden;max-height:95%}
+.jc-right{top:0;left:calc(50% - var(--D) / 2);width:var(--D);height:100%;transform:rotateY(90deg) translateZ(calc(var(--W) / 2));background:linear-gradient(90deg,rgba(255,255,255,.2),rgba(255,255,255,.06));border:1px solid rgba(255,255,255,.25)}
+.jc-top{left:0;top:calc(50% - var(--D) / 2);width:100%;height:var(--D);transform:rotateX(90deg) translateZ(calc(var(--H) / 2));background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22)}
+.jc-bottom{left:0;top:calc(50% - var(--D) / 2);width:100%;height:var(--D);transform:rotateX(-90deg) translateZ(calc(var(--H) / 2));background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18)}
+.jc-tray{position:absolute;inset:6px;transform:translateZ(calc(var(--D) / -2 + 3px));background:radial-gradient(circle,#2b2b33 0 16%,#15151a 17% 100%);display:flex;align-items:center;justify-content:center;
+  visibility:hidden;transition:visibility 0s linear .85s}   /* Chrome mis-sorts the disc layer above a closed lid, so it only exists while open (stays until the lid has shut) */
+.jcase.opened .jc-tray{visibility:visible;transition-delay:0s}
+.jc-cd{position:relative;width:236px;height:236px}
+.jc-lid{position:absolute;inset:0;transform-style:preserve-3d;transform-origin:left center;transform:translateZ(calc(var(--D) / 2));transition:transform .9s cubic-bezier(.3,.7,.2,1)}
+.jcase.opened .jc-lid{transform:translateZ(calc(var(--D) / 2)) rotateY(-118deg)}
+.jc-front{inset:0;overflow:hidden;background:#111}
+.jc-front img{position:absolute;left:8%;top:0;width:92%;height:100%;object-fit:cover}
+.jc-front::before{content:'';position:absolute;left:0;top:0;bottom:0;width:8%;background:linear-gradient(90deg,#0d0d10,#2a2a33 60%,#141418);z-index:1}
+.jc-gloss{position:absolute;inset:0;z-index:2;pointer-events:none;mix-blend-mode:screen;
+  background:linear-gradient(105deg,transparent calc(var(--gloss,40%) - 18%),rgba(255,255,255,.32) var(--gloss,40%),transparent calc(var(--gloss,40%) + 14%)),linear-gradient(180deg,rgba(255,255,255,.08),transparent 30%)}
+.jc-lid-inside{inset:0;transform:rotateY(180deg) translateZ(1px);background:#efece5;color:#111;display:flex;align-items:center;justify-content:center}
+.jci-inside{text-align:center;font:600 13px Arial,sans-serif;padding:16px}
+.jci-inside small{display:block;margin-top:4px;font:10px 'Share Tech Mono',monospace;color:#555}
+.jci-emblem{width:120px;height:120px;margin:0 auto 10px}
+.jci-emblem svg{width:100%;height:100%}
+.jci-head{padding:12px 18px 6px;border-bottom:2px solid #111;display:flex;flex-direction:column}
+.jci-head b{font:bold 13px Arial,sans-serif;text-transform:uppercase;letter-spacing:1px}
+.jci-head span{font:12px Arial,sans-serif}
+.jci-tracks{margin:8px 0;padding:0 18px 0 36px;font:10px/1.45 Arial,sans-serif;columns:2;column-gap:14px;max-height:160px;overflow:hidden}
+.jci-tracks em{font-style:normal;color:#666}
+.jci-tracks li.none{list-style:none;color:#777}
+.jci-foot{position:absolute;left:18px;right:18px;bottom:10px;display:flex;justify-content:space-between;align-items:flex-end;font:9px 'Share Tech Mono',monospace;color:#444}
+.jci-bar{letter-spacing:2px;padding-top:16px;background:repeating-linear-gradient(90deg,#111 0 1px,transparent 1px 3px,#111 3px 5px,transparent 5px 6px) top/100% 14px no-repeat}
+.case-bar{display:flex;gap:14px;align-items:center;flex-wrap:wrap;justify-content:center;padding:14px;font:10px 'Share Tech Mono',monospace;letter-spacing:1px;color:#9a98a6}
+
+/* ── collection city ── */
+.city-bar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+.city-key{font:.55rem 'Share Tech Mono',monospace;color:var(--muted);letter-spacing:1px}
+.city-wrap{position:relative;height:min(68vh,660px);min-height:380px;background:radial-gradient(ellipse at 50% 60%,rgba(255,255,255,.04),transparent 70%)}
+.city-canvas{width:100%;height:100%;display:block;cursor:grab;touch-action:pan-y}
+.city-tip{position:absolute;pointer-events:none;background:var(--surface2);border:1px solid var(--border);padding:6px 9px;font-size:.72rem;max-width:280px;z-index:5;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+.city-tip span{font:.55rem 'Share Tech Mono',monospace;color:var(--muted)}
+
+@media (prefers-reduced-motion:reduce){.c3-case,.jc-lid{transition:none!important}.reel-track{transition:none!important}}

@@ -21,6 +21,7 @@
   <button class="np-clear" onclick="clearNowPlaying()">✕</button>
 </div>
 
+<canvas class="aurora" id="aurora" aria-hidden="true"></canvas>
 <header>
   <div class="logo"><h1>CrateChanger</h1><span id="logoSub">200-DISC</span></div>
   <div class="header-center">
@@ -33,8 +34,9 @@
     <div class="stat-pill">LOADED <span id="loadedCount">0</span>/<span id="slotTotal">200</span></div>
     <div class="stat-pill wish-pill" id="wishPill" style="display:none" title="Wishlist items are not counted as loaded">♥ <span id="wishCount">0</span> WISHLIST</div>
     <div class="stat-pill shelf-pill" id="shelfPill" style="display:none" role="button" tabindex="0" onclick="openShelf()" title="Discs taken out of the changer">📦 <span id="shelfCount">0</span> SHELF</div>
+    <div class="stat-pill listen-pill" id="listenPill" style="display:none" role="button" tabindex="0" onclick="stopListening()" title="Reacting to the music in the room — click to stop">🎤 <span class="lv-meter"><i></i></span></div>
     <div class="stat-pill sync-pill" id="syncPill" style="display:none" role="button" tabindex="0" onclick="syncNow(true)" title="Sync with GitHub now">☁ <span id="syncPillText">SYNCED</span></div>
-    <button class="btn" onclick="pickRandom()">🎲 RANDOM</button>
+    <button class="btn" onclick="uiPickRandom()">🎲 RANDOM</button>
     <button class="btn" id="fetchAllBtn" onclick="fetchAllArt()">⬇ FETCH ART</button>
     <button class="btn gold-btn" onclick="openStats()">📊 STATS</button>
     <button class="btn" onclick="openBackupModal()">💾 BACKUP</button>
@@ -47,6 +49,7 @@
         <button class="btn" onclick="openTimeline()">📅 TIMELINE</button>
         <button class="btn" onclick="openHeatmap()">🔥 HEATMAP</button>
         <button class="btn" onclick="openDataCheck()">🧹 DATA CHECK</button>
+        <button class="btn" id="listenMenuBtn" onclick="toggleListening()">🎤 REACT TO THE MUSIC</button>
         <button class="btn" onclick="openRoom()">📺 LISTENING ROOM</button>
         <button class="btn" id="showroomBtn" onclick="toggleShowroom()">✨ SHOWROOM: OFF</button>
         <button class="btn" onclick="openShelf()">📦 SHELF</button>
@@ -75,7 +78,7 @@
       <option value="recent">SORT: RECENTLY PLAYED</option>
       <option value="added">SORT: RECENTLY ADDED</option>
     </select>
-    <select class="sort-select" id="viewSelect" onchange="setView(this.value)" aria-label="View"><option value="grid">VIEW: GRID</option><option value="list">VIEW: LIST</option><option value="ring">VIEW: CAROUSEL</option><option value="spines">VIEW: SPINES</option></select>
+    <select class="sort-select" id="viewSelect" onchange="setView(this.value)" aria-label="View"><option value="grid">VIEW: GRID</option><option value="list">VIEW: LIST</option><option value="ring">VIEW: CAROUSEL</option><option value="spines">VIEW: SPINES</option><option value="changer">VIEW: 3D CHANGER</option><option value="emblems">VIEW: EMBLEMS</option><option value="city">VIEW: CITY</option></select>
     <button class="btn" id="filterToggleBtn" onclick="toggleFilterPanel()" aria-expanded="false" aria-controls="filterPanel">⚲ FILTERS</button>
     <button class="btn" id="listViewBtn" onclick="toggleListView()" style="display:none">☰ LIST</button>
     <button class="btn" id="artFitBtn" onclick="toggleArtFit()" title="Crop covers to a square, or show the whole image">▣ FIT: CROP</button>
@@ -113,6 +116,19 @@
       <div class="ring-hint">DRAG OR SCROLL TO TURN · CLICK A DISC TO BRING IT TO THE FRONT · ← → AND ENTER WORK TOO</div>
     </div>
     <div class="spine-view" id="spineView" style="display:none"><div class="spine-shelf" id="spineShelf"></div></div>
+    <div class="c3-view" id="changerView" style="display:none">
+      <div class="c3-stage" id="c3Stage" aria-label="3D changer"><div class="c3-world" id="c3World"></div></div>
+      <div class="ring-readout" id="c3Readout"></div>
+      <div class="ring-hint">DRAG OR SCROLL TO TURN THE CAROUSEL · CLICK A CASE TO LIFT IT OUT · ENTER OR OPEN TO OPEN IT</div>
+    </div>
+    <div class="emb-view" id="emblemView" style="display:none">
+      <div class="emb-intro">EVERY ALBUM'S OWN EMBLEM · SPOKES = TRACKS (LONGER = LONGER TRACK) · RINGS = GENRES · OUTER DASHES = YEAR · COLOURS = COVER. DASHED SPOKES = NO TRACKLIST YET (⬇ FETCH ART FIXES THAT).</div>
+      <div class="emb-wall" id="emblemWall"></div>
+    </div>
+    <div class="city-view" id="cityView" style="display:none">
+      <div class="city-bar"><select class="sort-select" id="cityHeight" onchange="setCityHeight(this.value)" aria-label="Tower height"><option value="plays">HEIGHT: PLAYS</option><option value="year">HEIGHT: RELEASE YEAR</option><option value="tracks">HEIGHT: TRACK COUNT</option></select><span class="city-key" id="cityKey"></span></div>
+      <div class="city-wrap"><canvas class="city-canvas" id="cityCanvas" aria-label="Collection city: drag to turn, scroll to zoom, click a tower to open the disc"></canvas><div class="city-tip" id="cityTip" style="display:none"></div></div>
+    </div>
 </div>
 
 <!-- Fetch Progress Bar -->
@@ -134,6 +150,7 @@
       </div>
       <div class="modal-meta">
         <div>
+          <div class="modal-emblem" id="modalEmblem" role="button" tabindex="0" onclick="downloadEmblem()" title="This album's emblem (generated from its tracks, genres, year and cover) — click to download it"></div>
           <div class="modal-disc-num" id="modalDiscNum">DISC 001</div>
           <div class="modal-artist" id="modalArtist">—</div>
           <div class="modal-album" id="modalAlbum">—</div>
@@ -151,7 +168,8 @@
         </div>
         <div>
           <div class="modal-actions">
-            <button class="btn-sm" type="button" onclick="openRoom(currentModalIndex)" title="Fullscreen listening-room view (for a TV or tablet)">📺 ROOM</button>
+            <button class="btn-sm" type="button" onclick="openCase(currentModalIndex)" title="Hold the jewel case: turn it, open it">🧊 CASE</button>
+                        <button class="btn-sm" type="button" onclick="openRoom(currentModalIndex)" title="Fullscreen listening-room view (for a TV or tablet)">📺 ROOM</button>
                         <button class="btn-sm green" id="playChangerBtn" onclick="playOnChanger()" style="display:none" title="Send this disc to the changer (Home Assistant)">▶ PLAY ON CHANGER</button>
                         <button class="btn-sm green" id="nowPlayingBtn" onclick="setNowPlaying()">▶ NOW PLAYING</button>
             <button class="btn-sm" id="logPlayBtn" onclick="logPlay()">+ LOG PLAY</button>
@@ -365,6 +383,7 @@
     <div class="br-last-backup">The coffee-table binder — punch the slot number into the remote. Opens a print-ready page with your discs only (no notes, loans or wishlist).</div>
     <div class="print-choices">
       <button class="print-choice" type="button" onclick="printBooklet('index')"><b>COMPACT INDEX</b><span>Artist — Album ……… 042, A–Z in two columns. 200 discs on about 3 pages.</span></button>
+      <button class="print-choice" type="button" onclick="printBooklet('emblems')"><b>EMBLEM WALL</b><span>Every album's unique emblem, 20 per page.</span></button>
       <button class="print-choice" type="button" onclick="printBooklet('grid')"><b>COVER GRID</b><span>4 × 4 covers per page with big slot numbers, in slot order.</span></button>
     </div>
   </div>
@@ -423,6 +442,7 @@ http:
 <!-- Listening room -->
 <div class="room" id="roomModal" role="dialog" aria-modal="true" aria-label="Listening room">
   <div class="room-bg" id="roomBg"></div>
+  <canvas class="room-aurora" id="roomAurora" aria-hidden="true"></canvas>
   <div class="room-inner">
     <div class="room-cover-wrap">
       <div class="cd room-cd" id="roomCd" aria-hidden="true"><div class="cd-face"><div class="cd-shine"></div><div class="cd-label blank"></div><div class="cd-hole"></div></div></div>
@@ -442,8 +462,28 @@ http:
     <button class="btn" type="button" onclick="roomStep(-1)" aria-label="Previous disc">‹</button>
     <button class="btn" type="button" onclick="roomStep(1)" aria-label="Next disc">›</button>
     <button class="btn" type="button" id="roomPlayBtn" onclick="roomPlay()" style="display:none">▶ PLAY ON CHANGER</button>
+    <button class="btn" type="button" id="roomListenBtn" onclick="toggleListening()" title="React to the music playing in the room (microphone, analysed on this device)">🎤 LISTEN</button>
     <button class="btn" type="button" onclick="toggleRoomFullscreen()">⛶ FULLSCREEN</button>
     <button class="btn" type="button" onclick="closeRoom()" aria-label="Close">✕</button>
+  </div>
+</div>
+
+<!-- Jewel case -->
+<div class="case-modal" id="caseModal" role="dialog" aria-modal="true" aria-label="Jewel case">
+  <div class="case-stage" id="caseStage">
+    <div class="jcase" id="jcase">
+      <div class="jc-face jc-back"><div class="jc-insert" id="jcInsert"></div></div>
+      <div class="jc-face jc-left"><span id="jcSpine"></span></div>
+      <div class="jc-face jc-right"></div>
+      <div class="jc-face jc-top"></div>
+      <div class="jc-face jc-bottom"></div>
+      <div class="jc-tray"><div class="cd jc-cd" id="jcCd"><div class="cd-face"><div class="cd-shine"></div><div class="cd-label blank"></div><div class="cd-hole"></div></div></div></div>
+      <div class="jc-lid"><div class="jc-face jc-front"><img id="jcCover" alt=""><div class="jc-gloss"></div></div><div class="jc-face jc-lid-inside" id="jcInside"></div></div>
+    </div>
+  </div>
+  <div class="case-bar">DRAG OR TILT TO TURN · DOUBLE-CLICK / SPACE TO OPEN · ESC CLOSES
+    <button class="btn gold-btn" type="button" id="jcOpenBtn" onclick="toggleCaseOpen()">OPEN THE CASE</button>
+    <button class="btn" type="button" onclick="closeCase()" aria-label="Close">✕</button>
   </div>
 </div>
 
@@ -553,6 +593,7 @@ http:
 
 <div class="undo-bar" id="undoBar" role="status" aria-live="polite"><span id="undoText"></span><button type="button" id="undoBtn" onclick="performUndo()" title="Ctrl+Z">↶ UNDO</button><button type="button" id="redoBtn" onclick="performRedo()" title="Ctrl+Shift+Z" style="display:none">↷ REDO</button><button type="button" class="undo-x" aria-label="Dismiss" onclick="dismissUndo()">✕</button></div>
 
+<div class="reel" id="reel" aria-hidden="true"><div class="reel-window"><div class="reel-track" id="reelTrack"></div></div><div class="reel-glass"></div></div>
 <div class="update-bar" id="updateBar" role="status"><span>A NEW VERSION OF CRATECHANGER IS READY</span><button type="button" onclick="applyUpdate()">RELOAD</button></div>
 
 <!-- Toast -->

@@ -31,6 +31,8 @@ const ERRS = '<script>window.__errs=[];addEventListener("error",function(e){__er
 function runSuite(htmlPath, harnessFile, chrome) {
   const page = fs.readFileSync(htmlPath, 'utf8');
   const harness = fs.readFileSync(path.join(HERE, harnessFile), 'utf8');
+  // embedded in a <script> tag, a literal "</script" would end it early and the suite would silently time out
+  if (/<\/script/i.test(harness)) throw new Error(`${harnessFile} contains a literal "</script" - split the string (e.g. '</scr' + 'ipt>')`);
   const i = page.indexOf('<head>');
   if (i < 0 || page.lastIndexOf('</body>') < 0) throw new Error('page has no <head>/<body>');
   const withErr = page.slice(0, i + 6) + '\n' + ERRS + page.slice(i + 6);
@@ -38,7 +40,9 @@ function runSuite(htmlPath, harnessFile, chrome) {
   const test = withErr.slice(0, k) + '<script>\n' + harness + '\n</script>\n' + withErr.slice(k);
   const tmp = path.join(os.tmpdir(), `_cratechanger_${process.pid}_${harnessFile}.html`);
   fs.writeFileSync(tmp, test, 'utf8');
-  const r = spawnSync(process.execPath, [path.join(HERE, 'cdp.mjs'), chrome, 'test', pathToFileURL(tmp).href, os.tmpdir()], { encoding: 'utf8', timeout: 15 * 60 * 1000 });
+  // fake microphone (Chrome plays a test tone) + auto-accepted permission prompt, so the listening feature is testable
+  const flags = ((process.env.CHROME_FLAGS || '') + ' --use-fake-ui-for-media-stream --use-fake-device-for-media-stream --autoplay-policy=no-user-gesture-required').trim();
+  const r = spawnSync(process.execPath, [path.join(HERE, 'cdp.mjs'), chrome, 'test', pathToFileURL(tmp).href, os.tmpdir()], { encoding: 'utf8', timeout: 15 * 60 * 1000, env: { ...process.env, CHROME_FLAGS: flags } });
   try { fs.unlinkSync(tmp); } catch (e) {}
   const out = (r.stdout || '') + (r.stderr || '');
   const m = /SUMMARY pass=(\d+) fail=(\d+)/.exec(out);

@@ -100,12 +100,13 @@ function setCdLabel(el,src){
   l.classList.toggle('blank',!src);
 }
 function onDiscOpened(i){
+  renderModalEmblem(i);
   const modal=$('infoModal');setDiscVars(modal,null);
   const cd=$('modalCd');setCdLabel(cd,customArt.get(i)||null);
   cd.classList.toggle('spinning',!!(nowPlaying&&nowPlaying.index===i));
   cd.classList.remove('out');void cd.offsetWidth;cd.classList.add('out');   // replay the slide-out
   const token=modalToken;
-  paletteFor(i).then(p=>{if(token===modalToken&&currentModalIndex===i)setDiscVars(modal,discColors(p))});
+  paletteFor(i).then(p=>{if(token===modalToken&&currentModalIndex===i){setDiscVars(modal,discColors(p));renderModalEmblem(i)}});
 }
 function setSheen(deg){document.documentElement.style.setProperty('--sheen',Math.round(deg)+'deg')}
 document.addEventListener('pointermove',e=>{if(document.querySelector('.cd:not([hidden])'))setSheen(e.clientX/Math.max(1,innerWidth)*220+e.clientY/Math.max(1,innerHeight)*140)},{passive:true});
@@ -121,6 +122,7 @@ function refreshNpCd(){
   const i=nowPlaying?nowPlaying.index:null;
   setCdLabel(cd,i!==null&&!isSlotEmpty(discs[i])?(slotArtSources(i)[0]||null):null);
   const mc=$('modalCd');if(mc&&currentModalIndex!==null)mc.classList.toggle('spinning',!!(nowPlaying&&nowPlaying.index===currentModalIndex));
+  markNpTile();if(listen.on)refreshAuroraColors();
 }
 
 // ── morphing transitions (View Transitions API) — user actions only; programmatic calls stay synchronous ──
@@ -132,6 +134,7 @@ function uiOpenDisc(i,fromEl){
   if(!canVT()||!fromEl){openInfoModal(i);return Promise.resolve()}
   const src=heroOf(fromEl);src.style.viewTransitionName='cc-hero';
   const t=document.startViewTransition(()=>{src.style.viewTransitionName='';openInfoModal(i);$('modalArtWrap').style.viewTransitionName='cc-hero'});
+  t.ready.catch(()=>{});t.updateCallbackDone.catch(()=>{});   // rapid clicks skip a transition: not an error
   return t.finished.catch(()=>{}).finally(()=>{$('modalArtWrap').style.viewTransitionName=''});
 }
 function uiCloseModal(){
@@ -140,6 +143,7 @@ function uiCloseModal(){
   if(!canVT()||!tile){closeModal();return Promise.resolve()}
   const dst=heroOf(tile);$('modalArtWrap').style.viewTransitionName='cc-hero';
   const t=document.startViewTransition(()=>{$('modalArtWrap').style.viewTransitionName='';closeModal();dst.style.viewTransitionName='cc-hero'});
+  t.ready.catch(()=>{});t.updateCallbackDone.catch(()=>{});   // rapid clicks skip a transition: not an error
   return t.finished.catch(()=>{}).finally(()=>{dst.style.viewTransitionName=''});
 }
 let lastFilterAnim=0;
@@ -151,27 +155,32 @@ function uiApplyFilters(){
   const untag=()=>document.querySelectorAll('#grid .slot').forEach(el=>{el.style.viewTransitionName=''});
   tag();
   const t=document.startViewTransition(()=>{untag();applyFilters();tag()});
+  t.ready.catch(()=>{});t.updateCallbackDone.catch(()=>{});   // rapid clicks skip a transition: not an error
   return t.finished.catch(()=>{}).finally(untag);
 }
 
 // ── VIEWS: grid · list · carousel (the changer's own ring) · spines ──
 let currentView='grid';
+const VIEW_PANES={ring:'ringView',spines:'spineView',changer:'changerView',emblems:'emblemView',city:'cityView'};
 function setView(v){
-  if(!['grid','list','ring','spines'].includes(v))v='grid';
+  if(!['grid','list',...Object.keys(VIEW_PANES)].includes(v))v='grid';
   currentView=v;safeSet('cc_view',v);
   const sel=$('viewSelect');if(sel.value!==v)sel.value=v;
   if(listView!==(v==='list'))toggleListView();
-  $('grid').style.display=(v==='ring'||v==='spines')?'none':'';
-  $('ringView').style.display=v==='ring'?'':'none';
-  $('spineView').style.display=v==='spines'?'':'none';
+  $('grid').style.display=VIEW_PANES[v]?'none':'';
+  Object.entries(VIEW_PANES).forEach(([k,id])=>{$(id).style.display=k===v?'':'none'});
   document.body.dataset.view=v;
   if(v==='ring')renderRing();
   if(v==='spines')renderSpines();
+  if(v==='changer')renderChanger();
+  if(v==='emblems')renderEmblems();
+  if(v==='city')renderCity();
 }
 let altT=null;
 function afterGridRefresh(){
   clearTimeout(altT);
-  altT=setTimeout(()=>{if(currentView==='ring')renderRing(true);else if(currentView==='spines')renderSpines()},40);
+  altT=setTimeout(()=>{if(currentView==='ring')renderRing(true);else if(currentView==='spines')renderSpines();else if(currentView==='changer')renderChanger();else if(currentView==='emblems')renderEmblems();else if(currentView==='city')renderCity()},40);
+  markNpTile();
   if(document.body.classList.contains('zoom-cards'))fillCardTracks();
   if(document.body.classList.contains('showroom'))observeTileGlows();
 }
@@ -242,7 +251,7 @@ function renderRingReadout(){
 }
 (function wireRing(){
   const stage=$('ringStage');
-  stage.addEventListener('pointerdown',e=>{if(e.button!==0)return;cancelAnimationFrame(ring.anim);ring.drag={x:e.clientX,rot:ring.rot,lx:e.clientX,lt:performance.now(),v:0};ring.moved=false;stage.setPointerCapture(e.pointerId)});
+  stage.addEventListener('pointerdown',e=>{if(e.button!==0)return;cancelAnimationFrame(ring.anim);ring.drag={x:e.clientX,rot:ring.rot,lx:e.clientX,lt:performance.now(),v:0};ring.moved=false;try{stage.setPointerCapture(e.pointerId)}catch(err){}});
   stage.addEventListener('pointermove',e=>{
     const d=ring.drag;if(!d)return;
     const dx=e.clientX-d.x;if(Math.abs(dx)>5)ring.moved=true;
@@ -355,7 +364,7 @@ function closeRoom(){
   try{roomWake&&roomWake.release()}catch(e){}roomWake=null;
   if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});
 }
-function renderRoom(i){
+function renderRoom(i,animate){
   roomIndex=i;const d=discs[i];const e=mbCache[keyOf(d)];const m=getMeta(i);
   const playing=!!(nowPlaying&&nowPlaying.index===i);
   $('roomLabel').textContent=(playing?'NOW PLAYING':'DISC')+' · '+slotNum(i);
@@ -364,19 +373,23 @@ function renderRoom(i){
   const ov=getOverride(i);
   const tracks=(ov&&ov.tracks&&ov.tracks.length)?ov.tracks.map(t=>({title:t})):((e&&Array.isArray(e.tracks))?e.tracks:[]);
   $('roomTracks').innerHTML=tracks.slice(0,24).map(t=>`<li><span class="rt-title">${escH(t.title)}</span>${t.length?`<span class="rt-len">${escH(t.length)}</span>`:''}</li>`).join('')||'<li class="none">No tracklist yet — open the disc once to look it up</li>';
-  const img=$('roomCover');img.style.visibility='hidden';img.removeAttribute('src');
-  const srcs=slotArtSources(i);
-  if(srcs.length)loadImgWithFallbacks(img,srcs,()=>{img.style.visibility='hidden';$('roomBg').style.backgroundImage='none';setCdLabel($('roomCd'),null)},src=>{
-    if(roomIndex!==i)return;img.style.visibility='';
-    $('roomBg').style.backgroundImage=`url("${String(src).replace(/"/g,'%22')}")`;setCdLabel($('roomCd'),src);
-  });
-  else{$('roomBg').style.backgroundImage='none';setCdLabel($('roomCd'),null)}
+  // stepping between discs dissolves the old cover into the new one (particles); first open is a plain load
+  const img=$('roomCover');const srcs=slotArtSources(i);
+  const applySrc=src=>{if(roomIndex!==i)return;$('roomBg').style.backgroundImage=src?`url("${String(src).replace(/"/g,'%22')}")`:'none';setCdLabel($('roomCd'),src||null)};
+  if(animate&&img.getAttribute('src')&&img.style.visibility!=='hidden'){
+    firstWorkingSrc(srcs).then(src=>{if(roomIndex!==i)return;applySrc(src);if(src)dissolveImage(img,src);else{img.style.visibility='hidden';img.removeAttribute('src')}});
+  }else{
+    img.style.visibility='hidden';img.removeAttribute('src');
+    if(srcs.length)loadImgWithFallbacks(img,srcs,()=>{img.style.visibility='hidden';applySrc(null)},src=>{if(roomIndex!==i)return;img.style.visibility='';applySrc(src)});
+    else applySrc(null);
+  }
+  if(listen.on)refreshAuroraColors();
   $('roomCd').classList.toggle('spinning',playing);
   $('roomPlayBtn').style.display=webhookCfg().url?'':'none';
   setDiscVars($('roomModal'),null);
   paletteFor(i).then(p=>{if(roomIndex===i)setDiscVars($('roomModal'),discColors(p))});
 }
-function roomStep(dir){const owned=ownedSlots();if(!owned.length)return;const k=owned.indexOf(roomIndex);renderRoom(owned[((k<0?0:k)+dir+owned.length)%owned.length])}
+function roomStep(dir){const owned=ownedSlots();if(!owned.length)return;const k=owned.indexOf(roomIndex);renderRoom(owned[((k<0?0:k)+dir+owned.length)%owned.length],true)}
 function tickRoomClock(){$('roomClock').textContent=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}
 function toggleRoomFullscreen(){const r=$('roomModal');if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});else if(r.requestFullscreen)r.requestFullscreen().catch(()=>{})}
 async function roomPlay(){if(roomIndex===null)return;const keep=currentModalIndex;currentModalIndex=roomIndex;try{await playOnChanger()}finally{currentModalIndex=keep}renderRoom(roomIndex)}
