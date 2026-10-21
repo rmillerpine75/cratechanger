@@ -1073,7 +1073,7 @@
       ok('similarity scoring', similarity('frality of the human condition', 'frailty of the human condition') > 0.9 && similarity('abc', 'xyz') < 0.1);
 
       // ── COMPACT TOOLBAR ──
-      ok('secondary actions moved into ☰ MORE', !!$('moreMenu').querySelector('#themeBtn') && /TIMELINE/.test($('moreMenu').textContent) && /HEATMAP/.test($('moreMenu').textContent) && /DATA CHECK/.test($('moreMenu').textContent) && document.querySelectorAll('.header-right > .btn').length <= 6, document.querySelectorAll('.header-right > .btn').length + ' header buttons');
+      ok('secondary actions live in the section menus (theme/settings under ⚙)', !!$('moreMenu').querySelector('#themeBtn') && /TIMELINE/.test($('secInsights').textContent) && /HEATMAP/.test($('secInsights').textContent) && /STATS/.test($('secInsights').textContent) && /DATA CHECK/.test($('secTools').textContent) && !!$('secTools').querySelector('#fetchAllBtn') && /LISTENING ROOM/.test($('secListen').textContent) && document.querySelectorAll('.header-right > .btn').length <= 6, document.querySelectorAll('.header-right > .btn').length + ' header buttons');
       ok('MORE starts closed', !$('moreMenu').classList.contains('open'));
       $('moreBtn').click();
       ok('☰ MORE opens the menu', $('moreMenu').classList.contains('open') && $('moreBtn').getAttribute('aria-expanded') === 'true');
@@ -1082,8 +1082,19 @@
       $('moreBtn').click(); key('Escape');
       ok('Esc closes it', !$('moreMenu').classList.contains('open'));
       $('moreBtn').click();
-      Array.from($('moreMenu').querySelectorAll('button')).find(b => /TIMELINE/.test(b.textContent)).click();
-      ok('choosing an item runs it and closes the menu', $('timelineModal').classList.contains('open') && !$('moreMenu').classList.contains('open'));
+      Array.from($('moreMenu').querySelectorAll('button')).find(b => /SHORTCUTS/.test(b.textContent)).click();
+      ok('choosing an ⚙ item runs it and closes the menu', !$('moreMenu').classList.contains('open'));
+      key('Escape'); await wait(100);
+      ok('section menus start closed', !document.querySelector('.sec-menu.open'));
+      $('secInsightsBtn').click();
+      ok('INSIGHTS opens its menu', $('secInsights').classList.contains('open') && $('secInsightsBtn').getAttribute('aria-expanded') === 'true');
+      $('secToolsBtn').click();
+      ok('opening TOOLS closes INSIGHTS (one menu at a time)', $('secTools').classList.contains('open') && !$('secInsights').classList.contains('open'));
+      key('Escape');
+      ok('Esc closes a section menu', !$('secTools').classList.contains('open') && $('secToolsBtn').getAttribute('aria-expanded') === 'false');
+      $('secInsightsBtn').click();
+      Array.from($('secInsights').querySelectorAll('button')).find(b => /TIMELINE/.test(b.textContent)).click();
+      ok('choosing an item runs it and closes the menu', $('timelineModal').classList.contains('open') && !$('secInsights').classList.contains('open'));
       closeTimeline();
       ok('filters start collapsed', getComputedStyle($('filterPanel')).display === 'none');
       toggleFilterPanel();
@@ -1223,6 +1234,37 @@
       const lo4 = slotEl(4).querySelector('.flag-loaned'), lo5 = slotEl(5).querySelector('.flag-loaned');
       ok('a loan over 30 days gets a red "L!" badge on its tile', lo4.classList.contains('overdue') && lo4.textContent === 'L!' && /Max for 40 days/.test(lo4.title), lo4.title);
       ok('a recent loan keeps the normal badge', !lo5.classList.contains('overdue') && lo5.textContent === 'L');
+
+      // ── REDESIGN: attention chips, empty-slot / missing-art filters, ADD DISC, disc drawer ──
+      renderAttention();
+      const chip = k => $('attnChips').querySelector(`[data-attn="${k}"]`);
+      ok('attention chip counts loaned discs', !!chip('loaned') && /^2 LOANED OUT/.test(chip('loaned').textContent), chip('loaned') && chip('loaned').textContent);
+      chip('loaned').click(); await wait(600);
+      ok('clicking a chip filters to just those discs', $('flagFilter').value === 'loaned' && visible() === 2 && chip('loaned').getAttribute('aria-pressed') === 'true', visible());
+      ok('the active chip shows as a filter pill', /LOANED/.test($('filterPills').textContent));
+      chip('loaned').click(); await wait(600);
+      ok('clicking it again clears the filter', $('flagFilter').value === '' && !document.querySelector('#grid .slot.filtered-out'), visible());
+      const keep7 = discs[7]; discs[7] = null; buildGrid(); await wait(200);
+      ok('empty slots get their own chip (counted)', !!chip('_empty') && /^2 EMPTY SLOTS/.test(chip('_empty').textContent), chip('_empty') && chip('_empty').textContent);
+      chip('_empty').click(); await wait(600);
+      ok('EMPTY SLOTS chip shows only the empty slots', visible() === 2 && !!document.querySelector('#grid .slot[data-index="7"]:not(.filtered-out)') && /EMPTY SLOTS/.test($('filterPills').textContent), visible());
+      $('flagFilter').value = ''; applyFilters();
+      addDisc(); await wait(200);
+      ok('＋ ADD DISC opens the editor on the first empty slot', $('editModal').classList.contains('open') && editingIndex === 7, editingIndex);
+      closeEditModal();
+      const keep128 = discs[128]; discs[128] = ['Filler', 'Disc']; const n0 = discs.length; discs[7] = keep7; buildGrid();
+      addDisc(); await wait(200);
+      ok('＋ ADD DISC on a full changer appends a slot and opens it', discs.length === n0 + 1 && editingIndex === n0, discs.length + ' / ' + editingIndex);
+      closeEditModal(); discs.pop(); discs[128] = keep128; saveDiscs(); buildGrid();
+      $('flagFilter').value = '_noart'; applyFilters();
+      ok('MISSING ART filter shows only discs without covers', [...document.querySelectorAll('#grid .slot:not(.filtered-out)')].every(el => !slotArtSources(Number(el.dataset.index)).length));
+      $('flagFilter').value = ''; applyFilters();
+      openInfoModal(3); await wait(300);
+      ok('disc details open as a right-hand drawer', getComputedStyle($('infoModal')).justifyContent === 'flex-end' && $('infoModal').querySelector('.modal').getBoundingClientRect().right >= document.documentElement.clientWidth - 1, $('infoModal').classList.contains('open') + ' ' + Math.round($('infoModal').querySelector('.modal').getBoundingClientRect().right) + '/' + document.documentElement.clientWidth);
+      ok('drawer groups: play first, then fix, then look up', !!$('infoModal').querySelector('.act-primary #nowPlayingBtn') && !!$('infoModal').querySelector('.act-group #editionBtn') && !!$('infoModal').querySelector('.act-links #wikiBtn'));
+      editFromInfo(); await wait(200);
+      ok('✏ EDIT in the drawer swaps to the editor for that disc', !$('infoModal').classList.contains('open') && $('editModal').classList.contains('open') && editingIndex === 3);
+      closeEditModal();
 
       // ── ACTIVE-FILTER PILLS ──
       await resetAll6();

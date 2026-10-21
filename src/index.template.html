@@ -24,10 +24,45 @@
 <canvas class="aurora" id="aurora" aria-hidden="true"></canvas>
 <header>
   <div class="logo"><h1>CrateChanger</h1><span id="logoSub">200-DISC</span></div>
+  <nav class="sections" id="sectionNav" aria-label="Sections">
+    <button class="sec-btn active" type="button" id="secCrateBtn" onclick="goCrate()" aria-current="page"><span class="sec-ic" aria-hidden="true">▦</span>CRATE</button>
+    <div class="more-wrap sec-wrap">
+      <button class="sec-btn" type="button" id="secListenBtn" data-menu="secListen" aria-haspopup="true" aria-expanded="false" aria-controls="secListen"><span class="sec-ic" aria-hidden="true">◉</span>LISTEN</button>
+      <div class="more-menu sec-menu" id="secListen" role="menu" aria-label="Listen">
+        <button class="btn" onclick="openRoom()">📺 LISTENING ROOM</button>
+        <button class="btn" id="listenMenuBtn" onclick="toggleListening()">🎤 REACT TO THE MUSIC</button>
+        <button class="btn" id="showroomBtn" onclick="toggleShowroom()">✨ SHOWROOM: OFF</button>
+        <button class="btn" onclick="uiPickRandom()">🎲 RANDOM DISC</button>
+      </div>
+    </div>
+    <div class="more-wrap sec-wrap">
+      <button class="sec-btn" type="button" id="secInsightsBtn" data-menu="secInsights" aria-haspopup="true" aria-expanded="false" aria-controls="secInsights"><span class="sec-ic" aria-hidden="true">▮</span>INSIGHTS</button>
+      <div class="more-menu sec-menu" id="secInsights" role="menu" aria-label="Insights">
+        <button class="btn" onclick="openStats()">📊 STATS</button>
+        <button class="btn" onclick="openTimeline()">📅 TIMELINE</button>
+        <button class="btn" onclick="openHeatmap()">🔥 HEATMAP</button>
+      </div>
+    </div>
+    <div class="more-wrap sec-wrap">
+      <button class="sec-btn" type="button" id="secToolsBtn" data-menu="secTools" aria-haspopup="true" aria-expanded="false" aria-controls="secTools"><span class="sec-ic" aria-hidden="true">⚒</span>TOOLS</button>
+      <div class="more-menu sec-menu" id="secTools" role="menu" aria-label="Tools">
+        <div class="menu-label">COLLECTION</div>
+        <button class="btn" id="fetchAllBtn" onclick="fetchAllArt()">⬇ FETCH ART</button>
+        <button class="btn" id="detectDupsBtn" onclick="detectDuplicates()">🔍 FIND DUPES</button>
+        <button class="btn" onclick="openDataCheck()">🧹 DATA CHECK</button>
+        <button class="btn" onclick="jumpToSlot()">→ JUMP TO SLOT</button>
+        <button class="btn" id="addSlotBtn" onclick="addSlot()" title="Append an empty slot">&#65291; ADD EMPTY SLOT</button>
+        <button class="btn" onclick="openShelf()">📦 SHELF</button>
+        <div class="menu-label">DATA</div>
+        <button class="btn" onclick="openBackupModal()">💾 BACKUP, IMPORT &amp; EXPORT</button>
+        <button class="btn" onclick="openPrintModal()">🖨 PRINT BOOKLET</button>
+      </div>
+    </div>
+  </nav>
   <div class="header-center">
     <div class="search-wrap">
-      <input type="text" id="searchInput" placeholder="SEARCH ARTIST / ALBUM / DISC#..." oninput="applyFilters()">
-      <button class="search-clear" id="searchClear" onclick="clearSearch()">✕</button>
+      <input type="text" id="searchInput" placeholder="SEARCH ARTIST / ALBUM / DISC#..." oninput="applyFilters()" aria-label="Search artist, album or slot number">
+      <button class="search-clear" id="searchClear" onclick="clearSearch()" aria-label="Clear search">✕</button>
     </div>
   </div>
   <div class="header-right">
@@ -36,24 +71,12 @@
     <div class="stat-pill shelf-pill" id="shelfPill" style="display:none" role="button" tabindex="0" onclick="openShelf()" title="Discs taken out of the changer">📦 <span id="shelfCount">0</span> SHELF</div>
     <div class="stat-pill listen-pill" id="listenPill" style="display:none" role="button" tabindex="0" onclick="stopListening()" title="Reacting to the music in the room — click to stop">🎤 <span class="lv-meter"><i></i></span></div>
     <div class="stat-pill sync-pill" id="syncPill" style="display:none" role="button" tabindex="0" onclick="syncNow(true)" title="Sync with GitHub now">☁ <span id="syncPillText">SYNCED</span></div>
-    <button class="btn" onclick="uiPickRandom()">🎲 RANDOM</button>
-    <button class="btn" id="fetchAllBtn" onclick="fetchAllArt()">⬇ FETCH ART</button>
-    <button class="btn gold-btn" onclick="openStats()">📊 STATS</button>
-    <button class="btn" onclick="openBackupModal()">💾 BACKUP</button>
-    <button class="btn" id="addSlotBtn" onclick="addSlot()" title="Append an empty slot">&#65291; SLOT</button>
+    <button class="btn hdr-random" onclick="uiPickRandom()" title="Pick a random disc (R)" aria-label="Random disc">🎲<span class="hdr-lbl"> RANDOM</span></button>
     <button class="btn" id="editToggle" onclick="toggleEditMode()">✏ EDIT</button>
+    <button class="btn add-disc-btn" id="addDiscBtn" onclick="addDisc()" title="Fill the first empty slot (adds a slot if the changer is full)" aria-label="Add disc">＋<span class="hdr-lbl"> ADD DISC</span></button>
     <div class="more-wrap">
-      <button class="btn" id="moreBtn" onclick="toggleMoreMenu(event)" aria-haspopup="true" aria-expanded="false" aria-controls="moreMenu">☰ MORE</button>
+      <button class="btn gear-btn" id="moreBtn" onclick="toggleMoreMenu(event)" aria-haspopup="true" aria-expanded="false" aria-controls="moreMenu" aria-label="Settings and more" title="Settings, theme, shortcuts">⚙</button>
       <div class="more-menu" id="moreMenu" role="menu">
-        <button class="btn" onclick="jumpToSlot()">→ JUMP TO SLOT</button>
-        <button class="btn" onclick="openTimeline()">📅 TIMELINE</button>
-        <button class="btn" onclick="openHeatmap()">🔥 HEATMAP</button>
-        <button class="btn" onclick="openDataCheck()">🧹 DATA CHECK</button>
-        <button class="btn" id="listenMenuBtn" onclick="toggleListening()">🎤 REACT TO THE MUSIC</button>
-        <button class="btn" onclick="openRoom()">📺 LISTENING ROOM</button>
-        <button class="btn" id="showroomBtn" onclick="toggleShowroom()">✨ SHOWROOM: OFF</button>
-        <button class="btn" onclick="openShelf()">📦 SHELF</button>
-        <button class="btn" onclick="openPrintModal()">🖨 PRINT BOOKLET</button>
         <button class="btn" onclick="openSettings()">⚙ SETTINGS (SYNC, CHANGER)</button>
         <button class="btn" id="themeBtn" onclick="toggleTheme()">☀ LIGHT</button>
         <button class="btn" onclick="openHelp()" title="Keyboard shortcuts (?)">? SHORTCUTS</button>
@@ -63,12 +86,8 @@
 </header>
 
 <div class="toolbar">
-  <div class="toolbar-group">
-    <span class="zoom-label">ZOOM</span>
-    <input type="range" class="zoom-slider" id="zoomSlider" min="56" max="260" value="158" oninput="setZoom(this.value)" aria-label="Card size (also Ctrl+wheel or pinch)" title="Small = colour map of all slots · large = cards with tracklists">
-  </div>
-  <div class="toolbar-sep"></div>
-  <div class="toolbar-group">
+  <div class="attn-chips" id="attnChips" aria-label="Needs attention"></div>
+  <div class="toolbar-group toolbar-controls">
     <select class="sort-select" onchange="uiApplyFilters()" id="sortSelect" aria-label="Sort">
       <option value="slot">SORT: SLOT #</option>
       <option value="artist">SORT: ARTIST A–Z</option>
@@ -81,29 +100,38 @@
     <select class="sort-select" id="viewSelect" onchange="setView(this.value)" aria-label="View"><option value="grid">VIEW: GRID</option><option value="list">VIEW: LIST</option><option value="ring">VIEW: CAROUSEL</option><option value="spines">VIEW: SPINES</option><option value="changer">VIEW: 3D CHANGER</option><option value="emblems">VIEW: EMBLEMS</option><option value="city">VIEW: CITY</option></select>
     <button class="btn" id="filterToggleBtn" onclick="toggleFilterPanel()" aria-expanded="false" aria-controls="filterPanel">⚲ FILTERS</button>
     <button class="btn" id="listViewBtn" onclick="toggleListView()" style="display:none">☰ LIST</button>
-    <button class="btn" id="artFitBtn" onclick="toggleArtFit()" title="Crop covers to a square, or show the whole image">▣ FIT: CROP</button>
     <button class="btn" id="multiSelectBtn" onclick="toggleMultiSelect()">⬜ MULTI-SELECT</button>
-    <button class="btn" id="detectDupsBtn" onclick="detectDuplicates()">🔍 FIND DUPES</button>
   </div>
   <div class="toolbar-right">
     <div class="stat-pill" id="filterCount"></div>
   </div>
   <div class="filter-panel" id="filterPanel">
-    <select class="filter-select" onchange="uiApplyFilters()" id="artistFilter" aria-label="Filter by artist">
-      <option value="">ALL ARTISTS</option>
-    </select>
-    <select class="filter-select" onchange="uiApplyFilters()" id="flagFilter" aria-label="Filter by flag">
-      <option value="">ALL FLAGS</option>
-      <option value="broken">BROKEN</option>
-      <option value="loaned">LOANED</option>
-      <option value="replace">NEEDS REPLACE</option>
-      <option value="duplicate">DUPLICATE</option>
-      <option value="wishlist">WISHLIST</option>
-    </select>
-    <select class="filter-select" onchange="uiApplyFilters()" id="genreFilter" aria-label="Filter by genre" style="display:none"><option value="">ALL GENRES</option></select>
-    <select class="filter-select" onchange="uiApplyFilters()" id="decadeFilter" aria-label="Filter by decade" style="display:none"><option value="">ALL DECADES</option></select>
-    <select class="filter-select" onchange="uiApplyFilters()" id="originFilter" aria-label="Filter by band origin" style="display:none"><option value="">ALL ORIGINS</option></select>
-    <button class="btn" id="clearFiltersBtn" onclick="clearAllFilters()" style="display:none">✕ CLEAR FILTERS</button>
+    <div class="fp-group">
+      <span class="fp-label">FILTER</span>
+      <select class="filter-select" onchange="uiApplyFilters()" id="artistFilter" aria-label="Filter by artist">
+        <option value="">ALL ARTISTS</option>
+      </select>
+      <select class="filter-select" onchange="uiApplyFilters()" id="flagFilter" aria-label="Filter by flag">
+        <option value="">ALL FLAGS</option>
+        <option value="broken">BROKEN</option>
+        <option value="loaned">LOANED</option>
+        <option value="replace">NEEDS REPLACE</option>
+        <option value="duplicate">DUPLICATE</option>
+        <option value="wishlist">WISHLIST</option>
+        <option value="_empty">EMPTY SLOTS</option>
+        <option value="_noart">MISSING ART</option>
+      </select>
+      <select class="filter-select" onchange="uiApplyFilters()" id="genreFilter" aria-label="Filter by genre" style="display:none"><option value="">ALL GENRES</option></select>
+      <select class="filter-select" onchange="uiApplyFilters()" id="decadeFilter" aria-label="Filter by decade" style="display:none"><option value="">ALL DECADES</option></select>
+      <select class="filter-select" onchange="uiApplyFilters()" id="originFilter" aria-label="Filter by band origin" style="display:none"><option value="">ALL ORIGINS</option></select>
+      <button class="btn" id="clearFiltersBtn" onclick="clearAllFilters()" style="display:none">✕ CLEAR FILTERS</button>
+    </div>
+    <div class="fp-group">
+      <span class="fp-label">DISPLAY</span>
+      <span class="zoom-label">CARD SIZE</span>
+      <input type="range" class="zoom-slider" id="zoomSlider" min="56" max="260" value="158" oninput="setZoom(this.value)" aria-label="Card size (also Ctrl+wheel or pinch)" title="Small = colour map of all slots · large = cards with tracklists">
+      <button class="btn" id="artFitBtn" onclick="toggleArtFit()" title="Crop covers to a square, or show the whole image">▣ FIT: CROP</button>
+    </div>
   </div>
   <div class="filter-pills" id="filterPills" style="display:none"></div>
 </div>
@@ -168,21 +196,32 @@
         </div>
         <div>
           <div class="modal-actions">
-            <button class="btn-sm" type="button" onclick="openCase(currentModalIndex)" title="Hold the jewel case: turn it, open it">🧊 CASE</button>
-                        <button class="btn-sm" type="button" onclick="openRoom(currentModalIndex)" title="Fullscreen listening-room view (for a TV or tablet)">📺 ROOM</button>
-                        <button class="btn-sm green" id="playChangerBtn" onclick="playOnChanger()" style="display:none" title="Send this disc to the changer (Home Assistant)">▶ PLAY ON CHANGER</button>
-                        <button class="btn-sm green" id="nowPlayingBtn" onclick="setNowPlaying()">▶ NOW PLAYING</button>
-            <button class="btn-sm" id="logPlayBtn" onclick="logPlay()">+ LOG PLAY</button>
-            <button class="btn-sm gold" id="downloadArtBtn" onclick="downloadArt()" style="display:none">⬇ ART</button>
-            <button class="btn-sm" id="refreshBtn" onclick="refreshCurrentDisc()" style="display:none">&#8635; REFRESH</button>
-            <button class="btn-sm" id="editionBtn" onclick="openEditionPicker()" style="display:none" title="Wrong release? Pick the exact pressing you own">⇄ EDITION</button>
-            <button class="btn-sm" id="mbLinkBtn" style="display:none">MB</button>
-            <button class="btn-sm blue" id="discogsBtn" style="display:none">DISCOGS</button>
-            <button class="btn-sm" id="maBtn" onclick="openMetalArchives()" title="Encyclopaedia Metallum (Metal Archives) band search">M-A</button>
-            <button class="btn-sm" id="wikiBtn" onclick="openWiki()">WIKI</button>
-            <button class="btn-sm" id="ytBtn" onclick="openYouTube()">▶ YT</button>
-            <button class="btn-sm" id="spotifyBtn" onclick="openSpotify()">SPOTIFY</button>
-            <button class="btn-sm" id="qrBtn" onclick="showQR()">QR</button>
+            <div class="act-primary">
+              <button class="btn-sm green" id="playChangerBtn" onclick="playOnChanger()" style="display:none" title="Send this disc to the changer (Home Assistant)">▶ PLAY ON CHANGER</button>
+              <button class="btn-sm green" id="nowPlayingBtn" onclick="setNowPlaying()">▶ NOW PLAYING</button>
+              <button class="btn-sm" id="logPlayBtn" onclick="logPlay()">+ LOG PLAY</button>
+            </div>
+            <div class="act-row">
+              <button class="btn-sm" type="button" onclick="openRoom(currentModalIndex)" title="Fullscreen listening-room view (for a TV or tablet)">📺 ROOM</button>
+              <button class="btn-sm" type="button" onclick="openCase(currentModalIndex)" title="Hold the jewel case: turn it, open it">🧊 CASE</button>
+            </div>
+            <div class="act-group" aria-label="Fix this disc">
+              <span class="act-label">FIX</span>
+              <button class="btn-sm" type="button" id="editDiscBtn" onclick="editFromInfo()" title="Edit artist, album, notes, flags, art">✏ EDIT</button>
+              <button class="btn-sm" id="editionBtn" onclick="openEditionPicker()" style="display:none" title="Wrong release? Pick the exact pressing you own">⇄ EDITION</button>
+              <button class="btn-sm" id="refreshBtn" onclick="refreshCurrentDisc()" style="display:none">&#8635; REFRESH</button>
+              <button class="btn-sm gold" id="downloadArtBtn" onclick="downloadArt()" style="display:none">⬇ ART</button>
+            </div>
+            <div class="act-group act-links" aria-label="Look it up">
+              <span class="act-label">LOOK UP</span>
+              <button class="btn-sm" id="mbLinkBtn" style="display:none">MB</button>
+              <button class="btn-sm blue" id="discogsBtn" style="display:none">DISCOGS</button>
+              <button class="btn-sm" id="maBtn" onclick="openMetalArchives()" title="Encyclopaedia Metallum (Metal Archives) band search">M-A</button>
+              <button class="btn-sm" id="wikiBtn" onclick="openWiki()">WIKI</button>
+              <button class="btn-sm" id="ytBtn" onclick="openYouTube()">▶ YT</button>
+              <button class="btn-sm" id="spotifyBtn" onclick="openSpotify()">SPOTIFY</button>
+              <button class="btn-sm" id="qrBtn" onclick="showQR()">QR</button>
+            </div>
           </div>
           <div class="preview-player" id="previewPlayer">
             <span class="preview-label">30s PREVIEW</span>

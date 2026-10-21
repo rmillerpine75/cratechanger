@@ -1,0 +1,110 @@
+
+/* ── FLOW REDESIGN ───────────────────────────────────────────── */
+/* Readable secondary text: the old greys were ~3.6:1 (dark) and ~4.0:1 (light) on the page background */
+:root{--muted:#8e8b93}
+body.light-theme{--muted:#615b53}
+.slot-num,.slot-artist,.modal-disc-num{color:var(--accent2)}
+
+/* Header: logo · sections · search · actions */
+header{gap:10px 18px}
+.header-center{max-width:560px}
+.search-wrap input{font-size:.8rem;padding-top:10px;padding-bottom:10px}
+.sections{display:flex;align-items:stretch;gap:2px}
+.sec-btn{font-family:'Share Tech Mono',monospace;font-size:.72rem;letter-spacing:1.5px;padding:10px 12px;min-height:40px;background:none;border:0;border-bottom:2px solid transparent;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap}
+.sec-btn:hover,.sec-btn[aria-expanded="true"]{color:var(--text)}
+.sec-btn.active{color:var(--text);border-bottom-color:var(--accent)}
+.sec-btn[aria-haspopup]::after{content:'▾';font-size:.6rem;opacity:.6}
+.sec-ic{display:none;font-size:1rem;line-height:1}
+.sec-wrap{display:flex}
+.sec-menu{left:0;right:auto;min-width:240px}
+.menu-label{font-family:'Share Tech Mono',monospace;font-size:.58rem;letter-spacing:2px;color:var(--muted);padding:8px 8px 2px}
+.menu-label:first-child{padding-top:2px}
+.header-right .btn{min-height:40px}
+.add-disc-btn{background:var(--accent);border-color:var(--accent);color:#fff}
+.add-disc-btn:hover{background:var(--accent2);border-color:var(--accent2);color:#fff}
+body.light-theme .add-disc-btn:hover{color:#fff}
+.gear-btn{font-size:1rem;padding:4px 12px}
+.hdr-random{font-size:.65rem}
+
+/* Browse bar: what needs attention on the left, how to look at it on the right */
+.toolbar{gap:8px 12px}
+.toolbar-controls{margin-left:auto;flex-wrap:wrap}
+.toolbar-right{margin-left:0}
+.toolbar-right:empty,#filterCount:empty{display:none}
+#filterCount{color:var(--text)}
+.attn-chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.attn-chip{font-family:'Share Tech Mono',monospace;font-size:.62rem;letter-spacing:1px;padding:7px 11px;min-height:34px;background:transparent;border:1px solid var(--border);color:var(--text);cursor:pointer;white-space:nowrap}
+.attn-chip:hover{border-color:var(--accent2)}
+.attn-chip.on{background:rgba(200,41,46,.16);border-color:var(--accent);color:var(--text)}
+.attn-chip[data-attn="loaned"]::before{content:'';display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--gold);margin-right:7px;vertical-align:1px}
+.attn-chip[data-attn="broken"]::before,.attn-chip[data-attn="replace"]::before{content:'';display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--accent2);margin-right:7px;vertical-align:1px}
+.attn-chip[data-attn="_empty"]::before{content:'';display:inline-block;width:7px;height:7px;border:1px dashed var(--muted);margin-right:7px;vertical-align:0}
+.filter-panel.open{gap:10px 24px}
+.fp-group{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.fp-label{font-family:'Share Tech Mono',monospace;font-size:.58rem;letter-spacing:2px;color:var(--muted);margin-right:4px}
+
+/* Disc details: a side drawer, so the crate stays in view */
+#infoModal.modal-backdrop{justify-content:flex-end;align-items:stretch;padding:0;background:rgba(0,0,0,.55);backdrop-filter:blur(2px)}
+#infoModal .modal{max-width:560px;max-height:none;height:100%;border-width:0 0 0 1px;animation:drawerIn .22s cubic-bezier(.2,.8,.2,1)}
+@keyframes drawerIn{from{transform:translateX(40px);opacity:0}to{transform:none;opacity:1}}
+#infoModal .modal-header{flex-direction:column;min-height:0}
+#infoModal .modal-art-wrap{width:100%;height:auto;aspect-ratio:1/1;max-height:min(560px,52vh)}
+#infoModal .modal-art-placeholder{min-height:0}
+#infoModal .modal-cd{display:none}
+#infoModal .modal-header .modal-meta{padding:18px 20px 20px;gap:14px;justify-content:flex-start}
+#infoModal .modal-disc-num{font-family:'Bebas Neue',sans-serif;font-size:2.6rem;letter-spacing:2px;line-height:.9;margin-bottom:4px}
+#infoModal .modal-artist{font-family:'Share Tech Mono',monospace;font-size:.78rem;letter-spacing:1.5px;color:var(--muted)}
+#infoModal .modal-album{font-family:'Bebas Neue',sans-serif;font-size:1.9rem;letter-spacing:1px;line-height:1.05}
+#infoModal .modal-close{position:sticky;top:10px;float:right;margin:10px 10px -54px 0;z-index:5;width:44px;height:44px;background:rgba(10,10,12,.75);border:1px solid var(--border)}
+body.light-theme #infoModal .modal-close{background:rgba(250,248,245,.85)}
+.modal-actions{flex-direction:column;gap:10px;margin-top:4px}
+.act-primary,.act-row,.act-group{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.act-primary .btn-sm{flex:1 1 auto;min-height:46px;font-size:.68rem;letter-spacing:1.2px}
+#playChangerBtn,#nowPlayingBtn{background:var(--accent);border-color:var(--accent);color:#fff}
+#playChangerBtn:hover,#nowPlayingBtn:hover{background:var(--accent2);border-color:var(--accent2);color:#fff}
+#playChangerBtn:not([style*="none"])~#nowPlayingBtn{background:transparent;color:var(--text);border-color:var(--border)}
+.act-row .btn-sm{flex:1 1 0;min-height:40px}
+.act-group .btn-sm{min-height:36px}
+.act-label{font-family:'Share Tech Mono',monospace;font-size:.56rem;letter-spacing:2px;color:var(--muted);width:100%;padding-top:6px;border-top:1px solid var(--border)}
+.act-links .btn-sm{background:transparent;border-color:transparent;padding-left:6px;padding-right:6px;text-decoration:underline;text-underline-offset:3px}
+.act-links .btn-sm:hover{border-color:var(--border)}
+
+/* Phone: search first, sections become a bottom tab bar */
+@media (max-width:760px){
+  /* no backdrop-filter here: it would make the header the containing block for the fixed tab bar */
+  header{padding:10px 12px;gap:10px;backdrop-filter:none;-webkit-backdrop-filter:none;background:var(--bg)}
+  body.light-theme header{background:var(--bg)}
+  .logo{order:1;flex:1 1 auto}
+  .logo h1{font-size:1.5rem;letter-spacing:3px}
+  .header-right{order:2;width:auto;flex-wrap:nowrap;gap:6px}
+  .header-right .stat-pill:not(:first-child){display:none}
+  .header-right .stat-pill:first-child{font-size:.58rem}
+  .header-right .btn{min-width:44px;min-height:44px;padding:6px 10px}
+  .hdr-lbl{display:none}
+  .hdr-random,.add-disc-btn{font-size:1.05rem}
+  #editToggle{display:none}
+  body.edit-mode #editToggle{display:inline-flex;align-items:center}
+  .header-center{order:3;flex-basis:100%}
+  .search-wrap input{font-size:16px;padding-top:12px;padding-bottom:12px}
+  .sections{position:fixed;left:0;right:0;bottom:0;z-index:900;background:var(--surface);border-top:1px solid var(--border);display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;padding-bottom:env(safe-area-inset-bottom)}
+  .sec-btn{flex-direction:column;justify-content:center;gap:3px;width:100%;min-height:58px;padding:6px 2px;font-size:.6rem;letter-spacing:1px;border-bottom:0;border-top:2px solid transparent}
+  .sec-btn.active{border-top-color:var(--accent);color:var(--accent2)}
+  .sec-btn[aria-haspopup]::after{display:none}
+  .sec-ic{display:block}
+  .sec-wrap{display:block;position:static}
+  .sec-menu{position:fixed;left:8px;right:8px;top:auto;bottom:calc(66px + env(safe-area-inset-bottom));min-width:0;max-height:70vh;overflow-y:auto}
+  .more-menu .btn{min-height:44px}
+  .toolbar{padding:8px 12px}
+  .attn-chips{flex-wrap:nowrap;overflow-x:auto;width:100%;scrollbar-width:none}
+  .attn-chips::-webkit-scrollbar{display:none}
+  .toolbar-controls{margin-left:0;width:100%;flex-wrap:nowrap}
+  .toolbar-controls .sort-select{flex:1 1 0;min-width:0;min-height:40px}
+  .toolbar-controls .btn{min-height:40px}
+  #multiSelectBtn{display:none}
+  .grid-container{padding-bottom:150px}
+  .undo-bar{bottom:76px}
+  .batch-bar{bottom:calc(60px + env(safe-area-inset-bottom))}
+  .fetch-bar-wrap{bottom:calc(60px + env(safe-area-inset-bottom))}
+  #infoModal .modal{max-width:none;border-width:0}
+  #infoModal .modal-art-wrap{max-height:46vh}
+}

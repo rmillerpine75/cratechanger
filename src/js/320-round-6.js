@@ -185,7 +185,7 @@ function renderFilterPills(f){
   const pills=[];
   if(f.q)pills.push(['search','SEARCH: '+f.q]);
   if(f.artist)pills.push(['artistFilter','ARTIST: '+f.artist]);
-  if(f.flag)pills.push(['flagFilter','FLAG: '+f.flag.toUpperCase()]);
+  if(f.flag)pills.push(['flagFilter',f.flag==='_empty'?'EMPTY SLOTS':f.flag==='_noart'?'MISSING ART':'FLAG: '+f.flag.toUpperCase()]);
   if(f.genre)pills.push(['genreFilter','GENRE: '+f.genre.toUpperCase()]);
   if(f.decade)pills.push(['decadeFilter','DECADE: '+f.decade]);
   if(f.country)pills.push(['originFilter','ORIGIN: '+countryName(f.country).toUpperCase()]);

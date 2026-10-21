@@ -773,6 +773,116 @@ body.listening .slot.np-tile{box-shadow:0 0 calc(8px + var(--beat,0)*30px) var(-
 @media (prefers-reduced-motion:reduce){#roomIdBtn.busy{animation:none}}
 .room-cover{transition:opacity .35s}
 .room-cover.pending{opacity:.2}
+
+/* ── FLOW REDESIGN ───────────────────────────────────────────── */
+/* Readable secondary text: the old greys were ~3.6:1 (dark) and ~4.0:1 (light) on the page background */
+:root{--muted:#8e8b93}
+body.light-theme{--muted:#615b53}
+.slot-num,.slot-artist,.modal-disc-num{color:var(--accent2)}
+
+/* Header: logo · sections · search · actions */
+header{gap:10px 18px}
+.header-center{max-width:560px}
+.search-wrap input{font-size:.8rem;padding-top:10px;padding-bottom:10px}
+.sections{display:flex;align-items:stretch;gap:2px}
+.sec-btn{font-family:'Share Tech Mono',monospace;font-size:.72rem;letter-spacing:1.5px;padding:10px 12px;min-height:40px;background:none;border:0;border-bottom:2px solid transparent;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap}
+.sec-btn:hover,.sec-btn[aria-expanded="true"]{color:var(--text)}
+.sec-btn.active{color:var(--text);border-bottom-color:var(--accent)}
+.sec-btn[aria-haspopup]::after{content:'▾';font-size:.6rem;opacity:.6}
+.sec-ic{display:none;font-size:1rem;line-height:1}
+.sec-wrap{display:flex}
+.sec-menu{left:0;right:auto;min-width:240px}
+.menu-label{font-family:'Share Tech Mono',monospace;font-size:.58rem;letter-spacing:2px;color:var(--muted);padding:8px 8px 2px}
+.menu-label:first-child{padding-top:2px}
+.header-right .btn{min-height:40px}
+.add-disc-btn{background:var(--accent);border-color:var(--accent);color:#fff}
+.add-disc-btn:hover{background:var(--accent2);border-color:var(--accent2);color:#fff}
+body.light-theme .add-disc-btn:hover{color:#fff}
+.gear-btn{font-size:1rem;padding:4px 12px}
+.hdr-random{font-size:.65rem}
+
+/* Browse bar: what needs attention on the left, how to look at it on the right */
+.toolbar{gap:8px 12px}
+.toolbar-controls{margin-left:auto;flex-wrap:wrap}
+.toolbar-right{margin-left:0}
+.toolbar-right:empty,#filterCount:empty{display:none}
+#filterCount{color:var(--text)}
+.attn-chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.attn-chip{font-family:'Share Tech Mono',monospace;font-size:.62rem;letter-spacing:1px;padding:7px 11px;min-height:34px;background:transparent;border:1px solid var(--border);color:var(--text);cursor:pointer;white-space:nowrap}
+.attn-chip:hover{border-color:var(--accent2)}
+.attn-chip.on{background:rgba(200,41,46,.16);border-color:var(--accent);color:var(--text)}
+.attn-chip[data-attn="loaned"]::before{content:'';display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--gold);margin-right:7px;vertical-align:1px}
+.attn-chip[data-attn="broken"]::before,.attn-chip[data-attn="replace"]::before{content:'';display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--accent2);margin-right:7px;vertical-align:1px}
+.attn-chip[data-attn="_empty"]::before{content:'';display:inline-block;width:7px;height:7px;border:1px dashed var(--muted);margin-right:7px;vertical-align:0}
+.filter-panel.open{gap:10px 24px}
+.fp-group{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.fp-label{font-family:'Share Tech Mono',monospace;font-size:.58rem;letter-spacing:2px;color:var(--muted);margin-right:4px}
+
+/* Disc details: a side drawer, so the crate stays in view */
+#infoModal.modal-backdrop{justify-content:flex-end;align-items:stretch;padding:0;background:rgba(0,0,0,.55);backdrop-filter:blur(2px)}
+#infoModal .modal{max-width:560px;max-height:none;height:100%;border-width:0 0 0 1px;animation:drawerIn .22s cubic-bezier(.2,.8,.2,1)}
+@keyframes drawerIn{from{transform:translateX(40px);opacity:0}to{transform:none;opacity:1}}
+#infoModal .modal-header{flex-direction:column;min-height:0}
+#infoModal .modal-art-wrap{width:100%;height:auto;aspect-ratio:1/1;max-height:min(560px,52vh)}
+#infoModal .modal-art-placeholder{min-height:0}
+#infoModal .modal-cd{display:none}
+#infoModal .modal-header .modal-meta{padding:18px 20px 20px;gap:14px;justify-content:flex-start}
+#infoModal .modal-disc-num{font-family:'Bebas Neue',sans-serif;font-size:2.6rem;letter-spacing:2px;line-height:.9;margin-bottom:4px}
+#infoModal .modal-artist{font-family:'Share Tech Mono',monospace;font-size:.78rem;letter-spacing:1.5px;color:var(--muted)}
+#infoModal .modal-album{font-family:'Bebas Neue',sans-serif;font-size:1.9rem;letter-spacing:1px;line-height:1.05}
+#infoModal .modal-close{position:sticky;top:10px;float:right;margin:10px 10px -54px 0;z-index:5;width:44px;height:44px;background:rgba(10,10,12,.75);border:1px solid var(--border)}
+body.light-theme #infoModal .modal-close{background:rgba(250,248,245,.85)}
+.modal-actions{flex-direction:column;gap:10px;margin-top:4px}
+.act-primary,.act-row,.act-group{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.act-primary .btn-sm{flex:1 1 auto;min-height:46px;font-size:.68rem;letter-spacing:1.2px}
+#playChangerBtn,#nowPlayingBtn{background:var(--accent);border-color:var(--accent);color:#fff}
+#playChangerBtn:hover,#nowPlayingBtn:hover{background:var(--accent2);border-color:var(--accent2);color:#fff}
+#playChangerBtn:not([style*="none"])~#nowPlayingBtn{background:transparent;color:var(--text);border-color:var(--border)}
+.act-row .btn-sm{flex:1 1 0;min-height:40px}
+.act-group .btn-sm{min-height:36px}
+.act-label{font-family:'Share Tech Mono',monospace;font-size:.56rem;letter-spacing:2px;color:var(--muted);width:100%;padding-top:6px;border-top:1px solid var(--border)}
+.act-links .btn-sm{background:transparent;border-color:transparent;padding-left:6px;padding-right:6px;text-decoration:underline;text-underline-offset:3px}
+.act-links .btn-sm:hover{border-color:var(--border)}
+
+/* Phone: search first, sections become a bottom tab bar */
+@media (max-width:760px){
+  /* no backdrop-filter here: it would make the header the containing block for the fixed tab bar */
+  header{padding:10px 12px;gap:10px;backdrop-filter:none;-webkit-backdrop-filter:none;background:var(--bg)}
+  body.light-theme header{background:var(--bg)}
+  .logo{order:1;flex:1 1 auto}
+  .logo h1{font-size:1.5rem;letter-spacing:3px}
+  .header-right{order:2;width:auto;flex-wrap:nowrap;gap:6px}
+  .header-right .stat-pill:not(:first-child){display:none}
+  .header-right .stat-pill:first-child{font-size:.58rem}
+  .header-right .btn{min-width:44px;min-height:44px;padding:6px 10px}
+  .hdr-lbl{display:none}
+  .hdr-random,.add-disc-btn{font-size:1.05rem}
+  #editToggle{display:none}
+  body.edit-mode #editToggle{display:inline-flex;align-items:center}
+  .header-center{order:3;flex-basis:100%}
+  .search-wrap input{font-size:16px;padding-top:12px;padding-bottom:12px}
+  .sections{position:fixed;left:0;right:0;bottom:0;z-index:900;background:var(--surface);border-top:1px solid var(--border);display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;padding-bottom:env(safe-area-inset-bottom)}
+  .sec-btn{flex-direction:column;justify-content:center;gap:3px;width:100%;min-height:58px;padding:6px 2px;font-size:.6rem;letter-spacing:1px;border-bottom:0;border-top:2px solid transparent}
+  .sec-btn.active{border-top-color:var(--accent);color:var(--accent2)}
+  .sec-btn[aria-haspopup]::after{display:none}
+  .sec-ic{display:block}
+  .sec-wrap{display:block;position:static}
+  .sec-menu{position:fixed;left:8px;right:8px;top:auto;bottom:calc(66px + env(safe-area-inset-bottom));min-width:0;max-height:70vh;overflow-y:auto}
+  .more-menu .btn{min-height:44px}
+  .toolbar{padding:8px 12px}
+  .attn-chips{flex-wrap:nowrap;overflow-x:auto;width:100%;scrollbar-width:none}
+  .attn-chips::-webkit-scrollbar{display:none}
+  .toolbar-controls{margin-left:0;width:100%;flex-wrap:nowrap}
+  .toolbar-controls .sort-select{flex:1 1 0;min-width:0;min-height:40px}
+  .toolbar-controls .btn{min-height:40px}
+  #multiSelectBtn{display:none}
+  .grid-container{padding-bottom:150px}
+  .undo-bar{bottom:76px}
+  .batch-bar{bottom:calc(60px + env(safe-area-inset-bottom))}
+  .fetch-bar-wrap{bottom:calc(60px + env(safe-area-inset-bottom))}
+  #infoModal .modal{max-width:none;border-width:0}
+  #infoModal .modal-art-wrap{max-height:46vh}
+}
 </style>
 </head>
 <body>
@@ -788,10 +898,45 @@ body.listening .slot.np-tile{box-shadow:0 0 calc(8px + var(--beat,0)*30px) var(-
 <canvas class="aurora" id="aurora" aria-hidden="true"></canvas>
 <header>
   <div class="logo"><h1>CrateChanger</h1><span id="logoSub">200-DISC</span></div>
+  <nav class="sections" id="sectionNav" aria-label="Sections">
+    <button class="sec-btn active" type="button" id="secCrateBtn" onclick="goCrate()" aria-current="page"><span class="sec-ic" aria-hidden="true">▦</span>CRATE</button>
+    <div class="more-wrap sec-wrap">
+      <button class="sec-btn" type="button" id="secListenBtn" data-menu="secListen" aria-haspopup="true" aria-expanded="false" aria-controls="secListen"><span class="sec-ic" aria-hidden="true">◉</span>LISTEN</button>
+      <div class="more-menu sec-menu" id="secListen" role="menu" aria-label="Listen">
+        <button class="btn" onclick="openRoom()">📺 LISTENING ROOM</button>
+        <button class="btn" id="listenMenuBtn" onclick="toggleListening()">🎤 REACT TO THE MUSIC</button>
+        <button class="btn" id="showroomBtn" onclick="toggleShowroom()">✨ SHOWROOM: OFF</button>
+        <button class="btn" onclick="uiPickRandom()">🎲 RANDOM DISC</button>
+      </div>
+    </div>
+    <div class="more-wrap sec-wrap">
+      <button class="sec-btn" type="button" id="secInsightsBtn" data-menu="secInsights" aria-haspopup="true" aria-expanded="false" aria-controls="secInsights"><span class="sec-ic" aria-hidden="true">▮</span>INSIGHTS</button>
+      <div class="more-menu sec-menu" id="secInsights" role="menu" aria-label="Insights">
+        <button class="btn" onclick="openStats()">📊 STATS</button>
+        <button class="btn" onclick="openTimeline()">📅 TIMELINE</button>
+        <button class="btn" onclick="openHeatmap()">🔥 HEATMAP</button>
+      </div>
+    </div>
+    <div class="more-wrap sec-wrap">
+      <button class="sec-btn" type="button" id="secToolsBtn" data-menu="secTools" aria-haspopup="true" aria-expanded="false" aria-controls="secTools"><span class="sec-ic" aria-hidden="true">⚒</span>TOOLS</button>
+      <div class="more-menu sec-menu" id="secTools" role="menu" aria-label="Tools">
+        <div class="menu-label">COLLECTION</div>
+        <button class="btn" id="fetchAllBtn" onclick="fetchAllArt()">⬇ FETCH ART</button>
+        <button class="btn" id="detectDupsBtn" onclick="detectDuplicates()">🔍 FIND DUPES</button>
+        <button class="btn" onclick="openDataCheck()">🧹 DATA CHECK</button>
+        <button class="btn" onclick="jumpToSlot()">→ JUMP TO SLOT</button>
+        <button class="btn" id="addSlotBtn" onclick="addSlot()" title="Append an empty slot">&#65291; ADD EMPTY SLOT</button>
+        <button class="btn" onclick="openShelf()">📦 SHELF</button>
+        <div class="menu-label">DATA</div>
+        <button class="btn" onclick="openBackupModal()">💾 BACKUP, IMPORT &amp; EXPORT</button>
+        <button class="btn" onclick="openPrintModal()">🖨 PRINT BOOKLET</button>
+      </div>
+    </div>
+  </nav>
   <div class="header-center">
     <div class="search-wrap">
-      <input type="text" id="searchInput" placeholder="SEARCH ARTIST / ALBUM / DISC#..." oninput="applyFilters()">
-      <button class="search-clear" id="searchClear" onclick="clearSearch()">✕</button>
+      <input type="text" id="searchInput" placeholder="SEARCH ARTIST / ALBUM / DISC#..." oninput="applyFilters()" aria-label="Search artist, album or slot number">
+      <button class="search-clear" id="searchClear" onclick="clearSearch()" aria-label="Clear search">✕</button>
     </div>
   </div>
   <div class="header-right">
@@ -800,24 +945,12 @@ body.listening .slot.np-tile{box-shadow:0 0 calc(8px + var(--beat,0)*30px) var(-
     <div class="stat-pill shelf-pill" id="shelfPill" style="display:none" role="button" tabindex="0" onclick="openShelf()" title="Discs taken out of the changer">📦 <span id="shelfCount">0</span> SHELF</div>
     <div class="stat-pill listen-pill" id="listenPill" style="display:none" role="button" tabindex="0" onclick="stopListening()" title="Reacting to the music in the room — click to stop">🎤 <span class="lv-meter"><i></i></span></div>
     <div class="stat-pill sync-pill" id="syncPill" style="display:none" role="button" tabindex="0" onclick="syncNow(true)" title="Sync with GitHub now">☁ <span id="syncPillText">SYNCED</span></div>
-    <button class="btn" onclick="uiPickRandom()">🎲 RANDOM</button>
-    <button class="btn" id="fetchAllBtn" onclick="fetchAllArt()">⬇ FETCH ART</button>
-    <button class="btn gold-btn" onclick="openStats()">📊 STATS</button>
-    <button class="btn" onclick="openBackupModal()">💾 BACKUP</button>
-    <button class="btn" id="addSlotBtn" onclick="addSlot()" title="Append an empty slot">&#65291; SLOT</button>
+    <button class="btn hdr-random" onclick="uiPickRandom()" title="Pick a random disc (R)" aria-label="Random disc">🎲<span class="hdr-lbl"> RANDOM</span></button>
     <button class="btn" id="editToggle" onclick="toggleEditMode()">✏ EDIT</button>
+    <button class="btn add-disc-btn" id="addDiscBtn" onclick="addDisc()" title="Fill the first empty slot (adds a slot if the changer is full)" aria-label="Add disc">＋<span class="hdr-lbl"> ADD DISC</span></button>
     <div class="more-wrap">
-      <button class="btn" id="moreBtn" onclick="toggleMoreMenu(event)" aria-haspopup="true" aria-expanded="false" aria-controls="moreMenu">☰ MORE</button>
+      <button class="btn gear-btn" id="moreBtn" onclick="toggleMoreMenu(event)" aria-haspopup="true" aria-expanded="false" aria-controls="moreMenu" aria-label="Settings and more" title="Settings, theme, shortcuts">⚙</button>
       <div class="more-menu" id="moreMenu" role="menu">
-        <button class="btn" onclick="jumpToSlot()">→ JUMP TO SLOT</button>
-        <button class="btn" onclick="openTimeline()">📅 TIMELINE</button>
-        <button class="btn" onclick="openHeatmap()">🔥 HEATMAP</button>
-        <button class="btn" onclick="openDataCheck()">🧹 DATA CHECK</button>
-        <button class="btn" id="listenMenuBtn" onclick="toggleListening()">🎤 REACT TO THE MUSIC</button>
-        <button class="btn" onclick="openRoom()">📺 LISTENING ROOM</button>
-        <button class="btn" id="showroomBtn" onclick="toggleShowroom()">✨ SHOWROOM: OFF</button>
-        <button class="btn" onclick="openShelf()">📦 SHELF</button>
-        <button class="btn" onclick="openPrintModal()">🖨 PRINT BOOKLET</button>
         <button class="btn" onclick="openSettings()">⚙ SETTINGS (SYNC, CHANGER)</button>
         <button class="btn" id="themeBtn" onclick="toggleTheme()">☀ LIGHT</button>
         <button class="btn" onclick="openHelp()" title="Keyboard shortcuts (?)">? SHORTCUTS</button>
@@ -827,12 +960,8 @@ body.listening .slot.np-tile{box-shadow:0 0 calc(8px + var(--beat,0)*30px) var(-
 </header>
 
 <div class="toolbar">
-  <div class="toolbar-group">
-    <span class="zoom-label">ZOOM</span>
-    <input type="range" class="zoom-slider" id="zoomSlider" min="56" max="260" value="158" oninput="setZoom(this.value)" aria-label="Card size (also Ctrl+wheel or pinch)" title="Small = colour map of all slots · large = cards with tracklists">
-  </div>
-  <div class="toolbar-sep"></div>
-  <div class="toolbar-group">
+  <div class="attn-chips" id="attnChips" aria-label="Needs attention"></div>
+  <div class="toolbar-group toolbar-controls">
     <select class="sort-select" onchange="uiApplyFilters()" id="sortSelect" aria-label="Sort">
       <option value="slot">SORT: SLOT #</option>
       <option value="artist">SORT: ARTIST A–Z</option>
@@ -845,29 +974,38 @@ body.listening .slot.np-tile{box-shadow:0 0 calc(8px + var(--beat,0)*30px) var(-
     <select class="sort-select" id="viewSelect" onchange="setView(this.value)" aria-label="View"><option value="grid">VIEW: GRID</option><option value="list">VIEW: LIST</option><option value="ring">VIEW: CAROUSEL</option><option value="spines">VIEW: SPINES</option><option value="changer">VIEW: 3D CHANGER</option><option value="emblems">VIEW: EMBLEMS</option><option value="city">VIEW: CITY</option></select>
     <button class="btn" id="filterToggleBtn" onclick="toggleFilterPanel()" aria-expanded="false" aria-controls="filterPanel">⚲ FILTERS</button>
     <button class="btn" id="listViewBtn" onclick="toggleListView()" style="display:none">☰ LIST</button>
-    <button class="btn" id="artFitBtn" onclick="toggleArtFit()" title="Crop covers to a square, or show the whole image">▣ FIT: CROP</button>
     <button class="btn" id="multiSelectBtn" onclick="toggleMultiSelect()">⬜ MULTI-SELECT</button>
-    <button class="btn" id="detectDupsBtn" onclick="detectDuplicates()">🔍 FIND DUPES</button>
   </div>
   <div class="toolbar-right">
     <div class="stat-pill" id="filterCount"></div>
   </div>
   <div class="filter-panel" id="filterPanel">
-    <select class="filter-select" onchange="uiApplyFilters()" id="artistFilter" aria-label="Filter by artist">
-      <option value="">ALL ARTISTS</option>
-    </select>
-    <select class="filter-select" onchange="uiApplyFilters()" id="flagFilter" aria-label="Filter by flag">
-      <option value="">ALL FLAGS</option>
-      <option value="broken">BROKEN</option>
-      <option value="loaned">LOANED</option>
-      <option value="replace">NEEDS REPLACE</option>
-      <option value="duplicate">DUPLICATE</option>
-      <option value="wishlist">WISHLIST</option>
-    </select>
-    <select class="filter-select" onchange="uiApplyFilters()" id="genreFilter" aria-label="Filter by genre" style="display:none"><option value="">ALL GENRES</option></select>
-    <select class="filter-select" onchange="uiApplyFilters()" id="decadeFilter" aria-label="Filter by decade" style="display:none"><option value="">ALL DECADES</option></select>
-    <select class="filter-select" onchange="uiApplyFilters()" id="originFilter" aria-label="Filter by band origin" style="display:none"><option value="">ALL ORIGINS</option></select>
-    <button class="btn" id="clearFiltersBtn" onclick="clearAllFilters()" style="display:none">✕ CLEAR FILTERS</button>
+    <div class="fp-group">
+      <span class="fp-label">FILTER</span>
+      <select class="filter-select" onchange="uiApplyFilters()" id="artistFilter" aria-label="Filter by artist">
+        <option value="">ALL ARTISTS</option>
+      </select>
+      <select class="filter-select" onchange="uiApplyFilters()" id="flagFilter" aria-label="Filter by flag">
+        <option value="">ALL FLAGS</option>
+        <option value="broken">BROKEN</option>
+        <option value="loaned">LOANED</option>
+        <option value="replace">NEEDS REPLACE</option>
+        <option value="duplicate">DUPLICATE</option>
+        <option value="wishlist">WISHLIST</option>
+        <option value="_empty">EMPTY SLOTS</option>
+        <option value="_noart">MISSING ART</option>
+      </select>
+      <select class="filter-select" onchange="uiApplyFilters()" id="genreFilter" aria-label="Filter by genre" style="display:none"><option value="">ALL GENRES</option></select>
+      <select class="filter-select" onchange="uiApplyFilters()" id="decadeFilter" aria-label="Filter by decade" style="display:none"><option value="">ALL DECADES</option></select>
+      <select class="filter-select" onchange="uiApplyFilters()" id="originFilter" aria-label="Filter by band origin" style="display:none"><option value="">ALL ORIGINS</option></select>
+      <button class="btn" id="clearFiltersBtn" onclick="clearAllFilters()" style="display:none">✕ CLEAR FILTERS</button>
+    </div>
+    <div class="fp-group">
+      <span class="fp-label">DISPLAY</span>
+      <span class="zoom-label">CARD SIZE</span>
+      <input type="range" class="zoom-slider" id="zoomSlider" min="56" max="260" value="158" oninput="setZoom(this.value)" aria-label="Card size (also Ctrl+wheel or pinch)" title="Small = colour map of all slots · large = cards with tracklists">
+      <button class="btn" id="artFitBtn" onclick="toggleArtFit()" title="Crop covers to a square, or show the whole image">▣ FIT: CROP</button>
+    </div>
   </div>
   <div class="filter-pills" id="filterPills" style="display:none"></div>
 </div>
@@ -932,21 +1070,32 @@ body.listening .slot.np-tile{box-shadow:0 0 calc(8px + var(--beat,0)*30px) var(-
         </div>
         <div>
           <div class="modal-actions">
-            <button class="btn-sm" type="button" onclick="openCase(currentModalIndex)" title="Hold the jewel case: turn it, open it">🧊 CASE</button>
-                        <button class="btn-sm" type="button" onclick="openRoom(currentModalIndex)" title="Fullscreen listening-room view (for a TV or tablet)">📺 ROOM</button>
-                        <button class="btn-sm green" id="playChangerBtn" onclick="playOnChanger()" style="display:none" title="Send this disc to the changer (Home Assistant)">▶ PLAY ON CHANGER</button>
-                        <button class="btn-sm green" id="nowPlayingBtn" onclick="setNowPlaying()">▶ NOW PLAYING</button>
-            <button class="btn-sm" id="logPlayBtn" onclick="logPlay()">+ LOG PLAY</button>
-            <button class="btn-sm gold" id="downloadArtBtn" onclick="downloadArt()" style="display:none">⬇ ART</button>
-            <button class="btn-sm" id="refreshBtn" onclick="refreshCurrentDisc()" style="display:none">&#8635; REFRESH</button>
-            <button class="btn-sm" id="editionBtn" onclick="openEditionPicker()" style="display:none" title="Wrong release? Pick the exact pressing you own">⇄ EDITION</button>
-            <button class="btn-sm" id="mbLinkBtn" style="display:none">MB</button>
-            <button class="btn-sm blue" id="discogsBtn" style="display:none">DISCOGS</button>
-            <button class="btn-sm" id="maBtn" onclick="openMetalArchives()" title="Encyclopaedia Metallum (Metal Archives) band search">M-A</button>
-            <button class="btn-sm" id="wikiBtn" onclick="openWiki()">WIKI</button>
-            <button class="btn-sm" id="ytBtn" onclick="openYouTube()">▶ YT</button>
-            <button class="btn-sm" id="spotifyBtn" onclick="openSpotify()">SPOTIFY</button>
-            <button class="btn-sm" id="qrBtn" onclick="showQR()">QR</button>
+            <div class="act-primary">
+              <button class="btn-sm green" id="playChangerBtn" onclick="playOnChanger()" style="display:none" title="Send this disc to the changer (Home Assistant)">▶ PLAY ON CHANGER</button>
+              <button class="btn-sm green" id="nowPlayingBtn" onclick="setNowPlaying()">▶ NOW PLAYING</button>
+              <button class="btn-sm" id="logPlayBtn" onclick="logPlay()">+ LOG PLAY</button>
+            </div>
+            <div class="act-row">
+              <button class="btn-sm" type="button" onclick="openRoom(currentModalIndex)" title="Fullscreen listening-room view (for a TV or tablet)">📺 ROOM</button>
+              <button class="btn-sm" type="button" onclick="openCase(currentModalIndex)" title="Hold the jewel case: turn it, open it">🧊 CASE</button>
+            </div>
+            <div class="act-group" aria-label="Fix this disc">
+              <span class="act-label">FIX</span>
+              <button class="btn-sm" type="button" id="editDiscBtn" onclick="editFromInfo()" title="Edit artist, album, notes, flags, art">✏ EDIT</button>
+              <button class="btn-sm" id="editionBtn" onclick="openEditionPicker()" style="display:none" title="Wrong release? Pick the exact pressing you own">⇄ EDITION</button>
+              <button class="btn-sm" id="refreshBtn" onclick="refreshCurrentDisc()" style="display:none">&#8635; REFRESH</button>
+              <button class="btn-sm gold" id="downloadArtBtn" onclick="downloadArt()" style="display:none">⬇ ART</button>
+            </div>
+            <div class="act-group act-links" aria-label="Look it up">
+              <span class="act-label">LOOK UP</span>
+              <button class="btn-sm" id="mbLinkBtn" style="display:none">MB</button>
+              <button class="btn-sm blue" id="discogsBtn" style="display:none">DISCOGS</button>
+              <button class="btn-sm" id="maBtn" onclick="openMetalArchives()" title="Encyclopaedia Metallum (Metal Archives) band search">M-A</button>
+              <button class="btn-sm" id="wikiBtn" onclick="openWiki()">WIKI</button>
+              <button class="btn-sm" id="ytBtn" onclick="openYouTube()">▶ YT</button>
+              <button class="btn-sm" id="spotifyBtn" onclick="openSpotify()">SPOTIFY</button>
+              <button class="btn-sm" id="qrBtn" onclick="showQR()">QR</button>
+            </div>
           </div>
           <div class="preview-player" id="previewPlayer">
             <span class="preview-label">30s PREVIEW</span>
@@ -1799,7 +1948,9 @@ function matches(i,f){
     }
   }
   if(f.artist&&!(d&&d[0]===f.artist))return false;
-  if(f.flag&&!getMeta(i).flags.includes(f.flag))return false;
+  if(f.flag==='_empty'){if(!(isSlotEmpty(d)&&!isWish(i)))return false}
+  else if(f.flag==='_noart'){if(isSlotEmpty(d)||isWish(i)||slotArtSources(i).length)return false}
+  else if(f.flag&&!getMeta(i).flags.includes(f.flag))return false;
   if(f.genre&&!effectiveGenres(i).includes(f.genre))return false;
   if(f.decade&&decadeOf(effectiveYear(i))!==f.decade)return false;
   if(f.country&&effectiveCountry(i)!==f.country)return false;
@@ -1811,6 +1962,7 @@ function updateFilterUi(f,shown){
   const b=$('clearFiltersBtn');if(b)b.style.display=anyFilter(f)?'':'none';
   updateFilterToggleLabel(f);
   renderFilterPills(f);
+  if(typeof renderAttention==='function')renderAttention();
   afterGridRefresh();
 }
 function clearAllFilters(){
@@ -4773,7 +4925,7 @@ function renderFilterPills(f){
   const pills=[];
   if(f.q)pills.push(['search','SEARCH: '+f.q]);
   if(f.artist)pills.push(['artistFilter','ARTIST: '+f.artist]);
-  if(f.flag)pills.push(['flagFilter','FLAG: '+f.flag.toUpperCase()]);
+  if(f.flag)pills.push(['flagFilter',f.flag==='_empty'?'EMPTY SLOTS':f.flag==='_noart'?'MISSING ART':'FLAG: '+f.flag.toUpperCase()]);
   if(f.genre)pills.push(['genreFilter','GENRE: '+f.genre.toUpperCase()]);
   if(f.decade)pills.push(['decadeFilter','DECADE: '+f.decade]);
   if(f.country)pills.push(['originFilter','ORIGIN: '+countryName(f.country).toUpperCase()]);
@@ -6308,6 +6460,83 @@ function updateIdUi(){
   a.classList.toggle('on',ident.auto);a.textContent=ident.auto?'AUTO: ON':'AUTO: OFF';
 }
 
+
+// ── FLOW REDESIGN: sections (CRATE / LISTEN / INSIGHTS / TOOLS), ADD DISC, attention chips, disc drawer ──
+// Section menus reuse the ☰ MORE menu styling; one menu open at a time.
+function closeSectionMenus(except){
+  document.querySelectorAll('.sec-menu.open').forEach(m=>{
+    if(m.id===except)return;
+    m.classList.remove('open');
+    const b=document.querySelector(`[data-menu="${m.id}"]`);if(b)b.setAttribute('aria-expanded','false');
+  });
+}
+function toggleSectionMenu(id){
+  const m=$(id);if(!m)return;
+  const open=!m.classList.contains('open');
+  closeMoreMenu();closeSectionMenus(id);
+  m.classList.toggle('open',open);
+  const b=document.querySelector(`[data-menu="${id}"]`);if(b)b.setAttribute('aria-expanded',String(open));
+  if(open){const first=m.querySelector('button');if(first)first.focus({preventScroll:true})}
+}
+document.querySelectorAll('[data-menu]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();toggleSectionMenu(b.dataset.menu)}));
+document.querySelectorAll('.sec-menu').forEach(m=>m.addEventListener('click',e=>{if(e.target.closest('button'))closeSectionMenus()}));
+document.addEventListener('click',e=>{if(!e.target.closest('.sec-wrap'))closeSectionMenus()});
+$('moreBtn').addEventListener('click',()=>closeSectionMenus());
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Escape')return;
+  const open=document.querySelector('.sec-menu.open');if(!open)return;
+  const b=document.querySelector(`[data-menu="${open.id}"]`);
+  closeSectionMenus();if(b)b.focus({preventScroll:true});
+});
+function goCrate(){
+  closeSectionMenus();closeMoreMenu();
+  window.scrollTo({top:0,behavior:'smooth'});
+  $('searchInput').focus({preventScroll:true});
+}
+
+// ADD DISC: open the first empty slot in the editor; if the changer is full, append a slot first.
+function firstEmptySlot(){
+  for(let i=0;i<discs.length;i++)if(isSlotEmpty(discs[i])&&!isWish(i))return i;
+  return -1;
+}
+function addDisc(){
+  closeSectionMenus();closeMoreMenu();
+  let i=firstEmptySlot();
+  if(i<0){addSlot();i=discs.length-1}
+  openEditModal(null,i);
+}
+function editFromInfo(){
+  const i=currentModalIndex;if(i===null||i===undefined)return;
+  closeModal();openEditModal(null,i);
+}
+
+// ATTENTION CHIPS: what needs doing, one click to see it (sets the flag filter; click again to clear).
+var ATTN=[
+  ['_empty','EMPTY SLOT','EMPTY SLOTS',i=>isSlotEmpty(discs[i])&&!isWish(i)],
+  ['loaned','LOANED OUT','LOANED OUT',i=>!isSlotEmpty(discs[i])&&getMeta(i).flags.includes('loaned')],
+  ['broken','BROKEN','BROKEN',i=>!isSlotEmpty(discs[i])&&getMeta(i).flags.includes('broken')],
+  ['replace','NEEDS REPLACING','NEED REPLACING',i=>!isSlotEmpty(discs[i])&&getMeta(i).flags.includes('replace')],
+  ['_noart','MISSING ART','MISSING ART',i=>!isSlotEmpty(discs[i])&&!isWish(i)&&!slotArtSources(i).length]
+];
+function renderAttention(){
+  const el=$('attnChips');if(!el||!ATTN)return;
+  const cur=$('flagFilter').value;
+  const html=ATTN.map(([k,one,many,test])=>{
+    let n=0;for(let i=0;i<discs.length;i++)if(test(i))n++;
+    if(!n&&cur!==k)return '';
+    const on=cur===k;
+    return `<button type="button" class="attn-chip${on?' on':''}" data-attn="${k}" aria-pressed="${on}">${n} ${n===1?one:many}${on?' ✕':''}</button>`;
+  }).join('');
+  el.innerHTML=html;
+  el.style.display=html?'':'none';
+}
+$('attnChips').addEventListener('click',e=>{
+  const b=e.target.closest('[data-attn]');if(!b)return;
+  const k=b.dataset.attn;const sel=$('flagFilter');
+  sel.value=sel.value===k?'':k;
+  uiApplyFilters();
+});
+renderAttention();
 async function init(){
   await loadCustomArt();
   await migrateLegacyMetaArt();

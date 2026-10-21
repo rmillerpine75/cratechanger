@@ -73,7 +73,9 @@ function matches(i,f){
     }
   }
   if(f.artist&&!(d&&d[0]===f.artist))return false;
-  if(f.flag&&!getMeta(i).flags.includes(f.flag))return false;
+  if(f.flag==='_empty'){if(!(isSlotEmpty(d)&&!isWish(i)))return false}
+  else if(f.flag==='_noart'){if(isSlotEmpty(d)||isWish(i)||slotArtSources(i).length)return false}
+  else if(f.flag&&!getMeta(i).flags.includes(f.flag))return false;
   if(f.genre&&!effectiveGenres(i).includes(f.genre))return false;
   if(f.decade&&decadeOf(effectiveYear(i))!==f.decade)return false;
   if(f.country&&effectiveCountry(i)!==f.country)return false;
@@ -85,6 +87,7 @@ function updateFilterUi(f,shown){
   const b=$('clearFiltersBtn');if(b)b.style.display=anyFilter(f)?'':'none';
   updateFilterToggleLabel(f);
   renderFilterPills(f);
+  if(typeof renderAttention==='function')renderAttention();
   afterGridRefresh();
 }
 function clearAllFilters(){
