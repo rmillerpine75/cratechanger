@@ -97,7 +97,7 @@
       <option value="recent">SORT: RECENTLY PLAYED</option>
       <option value="added">SORT: RECENTLY ADDED</option>
     </select>
-    <select class="sort-select" id="viewSelect" onchange="setView(this.value)" aria-label="View"><option value="grid">VIEW: GRID</option><option value="list">VIEW: LIST</option><option value="ring">VIEW: CAROUSEL</option><option value="spines">VIEW: SPINES</option><option value="changer">VIEW: 3D CHANGER</option><option value="emblems">VIEW: EMBLEMS</option><option value="city">VIEW: CITY</option></select>
+    <select class="sort-select" id="viewSelect" onchange="setView(this.value)" aria-label="View"><option value="grid">VIEW: GRID</option><option value="list">VIEW: LIST</option><option value="ring">VIEW: CAROUSEL</option><option value="spines">VIEW: SPINES</option><option value="changer">VIEW: 3D CHANGER</option><option value="emblems">VIEW: EMBLEMS</option><option value="city">VIEW: CITY</option><option value="wall">VIEW: DATA SIDE</option><option value="seek">VIEW: SEEK</option></select>
     <button class="btn" id="filterToggleBtn" onclick="toggleFilterPanel()" aria-expanded="false" aria-controls="filterPanel">⚲ FILTERS</button>
     <button class="btn" id="listViewBtn" onclick="toggleListView()" style="display:none">☰ LIST</button>
     <button class="btn" id="multiSelectBtn" onclick="toggleMultiSelect()">⬜ MULTI-SELECT</button>
@@ -157,6 +157,47 @@
       <div class="city-bar"><select class="sort-select" id="cityHeight" onchange="setCityHeight(this.value)" aria-label="Tower height"><option value="plays">HEIGHT: PLAYS</option><option value="year">HEIGHT: RELEASE YEAR</option><option value="tracks">HEIGHT: TRACK COUNT</option></select><span class="city-key" id="cityKey"></span></div>
       <div class="city-wrap"><canvas class="city-canvas" id="cityCanvas" aria-label="Collection city: drag to turn, scroll to zoom, click a tower to open the disc"></canvas><div class="city-tip" id="cityTip" style="display:none"></div></div>
     </div>
+    <div class="wall-view" id="wallView" style="display:none">
+      <div class="wall-bar">
+        <div class="wall-chips" id="wallChips" aria-label="What the wall shows"></div>
+        <select class="sort-select" id="wallOrder" onchange="wallSetOrder(this.value)" aria-label="Wall order"><option value="slot">ORDER: SLOT #</option><option value="len">ORDER: SHORTEST → LONGEST</option></select>
+      </div>
+      <div class="wall-wrap"><canvas class="wall-canvas" id="wallCanvas" role="img" aria-label="Every slot drawn data side up at true scale: the rainbow covers exactly the area where music is recorded. Click a disc to open it."></canvas><div class="wall-tip" id="wallTip" style="display:none"></div></div>
+      <div class="ring-hint">EVERY DISC DATA SIDE UP, TRUE SCALE · THE RAINBOW IS WHERE MUSIC IS RECORDED · YOUR POINTER IS THE LIGHT · CLICK A DISC TO OPEN IT</div>
+    </div>
+    <div class="seek-view" id="seekView" style="display:none">
+      <div class="seek-stage"><canvas class="seek-canvas" id="seekCanvas" role="img" aria-label="Top-down view of the carousel; the slot under the red loader at the top is the one at the laser. Click a slot to turn to it."></canvas></div>
+      <div class="seek-panel">
+        <div class="seek-status" id="seekStatus">READY</div>
+        <div class="seek-artist" id="seekArtist">—</div>
+        <div class="seek-album" id="seekAlbum">—</div>
+        <div class="seek-go">
+          <label class="seek-slot">SLOT <input type="number" id="seekSlot" min="1" max="999" value="1" aria-label="Slot to play"></label>
+          <button class="btn add-disc-btn" type="button" id="seekPlayBtn" onclick="seekPlay()">▶ PLAY ON CHANGER</button>
+          <button class="btn" type="button" onclick="seekRandom()">RANDOM</button>
+        </div>
+        <div class="seek-stats">
+          <div><span>THIS SEEK</span><b id="seekSlots">—</b></div>
+          <div><span>TAKES</span><b id="seekTime">—</b></div>
+          <div><span>TURNING AT</span><b id="seekSpeed">0 SLOTS/S</b></div>
+        </div>
+        <div class="seek-calib">
+          <div class="seek-calib-head"><span>YOUR CHANGER'S TIMING</span><span class="seek-badge" id="seekBadge">NOT MEASURED</span></div>
+          <p id="seekCalibText"></p>
+          <div class="seek-sw">
+            <button class="btn" type="button" id="seekSwStart" onclick="seekSwStart()">START</button>
+            <button class="btn" type="button" onclick="seekSwStop()">IT STOPPED</button>
+            <b id="seekSwTime">0.0 S</b>
+            <button class="seek-clear" type="button" onclick="seekClearRuns()">CLEAR</button>
+          </div>
+          <div class="seek-runs" id="seekRuns"></div>
+          <div class="seek-dir" role="group" aria-label="How the carousel turns">
+            <button class="btn" type="button" id="seekDirShort" onclick="seekSetDir('shortest')" aria-pressed="true">SHORTEST WAY ROUND</button>
+            <button class="btn" type="button" id="seekDirOne" onclick="seekSetDir('oneway')" aria-pressed="false">ONE DIRECTION ONLY</button>
+          </div>
+        </div>
+      </div>
+    </div>
 </div>
 
 <!-- Fetch Progress Bar -->
@@ -176,6 +217,8 @@
             <div class="modal-art-wrap" id="modalArtWrap" onclick="openFullscreenArt()">
         <div class="modal-art-placeholder">💿</div>
       </div>
+      <canvas class="data-side" id="dataSideCanvas" role="img" aria-label="The data side of this disc: the rainbow covers exactly where music is recorded; rings mark where each track starts. Click a ring to find the track."></canvas>
+      <div class="data-side-read" id="dataSideRead" aria-live="polite"></div>
       <div class="modal-meta">
         <div>
           <div class="modal-emblem" id="modalEmblem" role="button" tabindex="0" onclick="downloadEmblem()" title="This album's emblem (generated from its tracks, genres, year and cover) — click to download it"></div>
@@ -204,6 +247,7 @@
             <div class="act-row">
               <button class="btn-sm" type="button" onclick="openRoom(currentModalIndex)" title="Fullscreen listening-room view (for a TV or tablet)">📺 ROOM</button>
               <button class="btn-sm" type="button" onclick="openCase(currentModalIndex)" title="Hold the jewel case: turn it, open it">🧊 CASE</button>
+              <button class="btn-sm" type="button" id="dataSideBtn" onclick="toggleDataSide()" aria-pressed="false" title="Flip the disc over: see where the music actually is">◐ DATA SIDE</button>
             </div>
             <div class="act-group" aria-label="Fix this disc">
               <span class="act-label">FIX</span>

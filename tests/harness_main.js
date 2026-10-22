@@ -1266,6 +1266,57 @@
       ok('✏ EDIT in the drawer swaps to the editor for that disc', !$('infoModal').classList.contains('open') && $('editModal').classList.contains('open') && editingIndex === 3);
       closeEditModal();
 
+      // ── PHYSICAL VISUALS: CD physics, data side, wall, seek ──
+      {
+        const edt = [313, 249, 342, 333, 265, 339, 288, 256, 356, 360, 302].map((s, n) => ({ num: n + 1, title: 'T' + (n + 1), length: msToMin(s * 1000) }));
+        mbCache[keyOf(discs[3])] = { tracks: edt };
+        const tm = discTiming(3);
+        ok('CD physics: a 56:43 album ends 52.0 mm from the centre', tm.kind === 'ok' && tm.total === 3403 && Math.abs(tm.rEnd - 52.0) < 0.05, tm.rEnd && tm.rEnd.toFixed(2));
+        ok('CD physics: track 6 starts at 39.3 mm; spin is ~458 rpm at 25 mm', Math.abs(CDP.rAt(tm.starts[5], tm.total) - 39.3) < 0.05 && Math.round(CDP.rpm(25)) === 458);
+        ok('CD physics: a 77-minute master still fits inside 58 mm (1.5 µm pitch)', CDP.rAt(4657, 4657) < 58 && CDP.rAt(4657, 4657) > 57);
+        const keepTitle = discs[5][1]; discs[5][1] = 'Test Set (Disc 2)';
+        mbCache[keyOf(discs[5])] = { tracks: [{ num: '1.1', length: '40:00' }, { num: '1.2', length: '30:00' }, { num: '2.1', length: '20:00' }, { num: '2.2', length: '25:00' }] };
+        const ms = discTiming(5);
+        ok('a "(Disc 2)" slot uses only disc 2 of a multi-disc release', ms.kind === 'ok' && ms.total === 2700 && ms.lens.length === 2, ms.kind + ' ' + ms.total);
+        mbCache[keyOf(discs[6])] = { tracks: [{ num: 1, length: '50:00' }, { num: 2, length: '40:00' }] };
+        ok('a tracklist longer than any CD is flagged, not drawn as music', discTiming(6).kind === 'over');
+        mbCache[keyOf(discs[8])] = { tracks: [{ num: 1, length: null }, { num: 2, length: null }] };
+        ok('no lengths vs not looked up yet are told apart', discTiming(8).kind === 'nolen' && discTiming(9).kind === 'unknown' && discTiming(128).kind === 'empty');
+        // drawer: flip to the data side
+        openInfoModal(3); await wait(300);
+        toggleDataSide(true); await wait(300);
+        const dsc = $('dataSideCanvas');
+        ok('◐ DATA SIDE flips the cover: the disc canvas shows, the art hides', getComputedStyle(dsc).display !== 'none' && dsc.width > 0 && getComputedStyle($('modalArtWrap')).visibility === 'hidden' && $('dataSideBtn').getAttribute('aria-pressed') === 'true', dsc.width + 'px');
+        ok('the data side reads out where the music ends', /52\.0 MM/.test($('dataSideRead').textContent), $('dataSideRead').textContent);
+        toggleDataSide(false); closeModal();
+        ok('flipping back restores the cover', getComputedStyle($('modalArtWrap')).visibility !== 'hidden' && safeGet('cc_data_side') === '0');
+        // wall view
+        setView('wall'); await wait(400);
+        const wc = $('wallCanvas');
+        ok('VIEW: DATA SIDE draws every slot', getComputedStyle($('wallView')).display !== 'none' && wc.height > 0 && wall.cells.length === discs.length, wc.height + ' / ' + wall.cells.length);
+        ok('the wall counts what it can and cannot measure', /MEASURED/.test($('wallChips').textContent) && /TOO LONG FOR ONE CD/.test($('wallChips').textContent) && /NOT LOOKED UP YET/.test($('wallChips').textContent), $('wallChips').textContent);
+        const r = wc.getBoundingClientRect(), p3 = wall.cells.indexOf(3);
+        wc.dispatchEvent(new PointerEvent('pointermove', { clientX: r.left + (p3 % wall.cols + 0.5) * wall.cell, clientY: r.top + (Math.floor(p3 / wall.cols) + 0.5) * wall.cell, bubbles: true }));
+        ok('hovering a disc on the wall explains it', $('wallTip').style.display !== 'none' && /52\.0 mm/.test($('wallTip').textContent), $('wallTip').textContent.slice(0, 80));
+        wallSetOrder('len'); await wait(100);
+        { const okCells = wall.cells.filter(i => wallTimings()[i].kind === 'ok'), firstOther = wall.cells.findIndex(i => wallTimings()[i].kind !== 'ok');
+          ok('shortest → longest puts measured discs first, by length', okCells.length > 0 && firstOther === okCells.length && okCells.every((i, n) => !n || wallTimings()[okCells[n - 1]].total <= wallTimings()[i].total), okCells.length + ' measured'); }
+        wallSetOrder('slot');
+        // seek view
+        setView('seek'); await wait(200);
+        seekClearRuns(); sk.dir = 'shortest';
+        sk.runs = [{ d: 30, t: 5.1 }, { d: 90, t: 12.3 }];
+        const ft = seekFit();
+        ok('seek timing: two timed seeks give start-up time + seconds per slot', Math.abs(ft.per - 0.12) < 1e-6 && Math.abs(ft.over - 1.5) < 1e-6);
+        ok('seek takes the shortest way round', seekDelta(195, 4) === 9 && seekDelta(4, 195) === -9);
+        sk.dir = 'oneway'; ok('one-direction changers go the long way when they must', seekDelta(4, 195) === 191); sk.dir = 'shortest';
+        sk.pos = 0; sk.anim = null; seekTo(9); await wait(Math.ceil(seekDuration(9) * 1000) + 300);
+        ok('the carousel lands on the slot and the panel says so', seekCur() === 9 && /READY · SLOT 010/.test($('seekStatus').textContent) && $('seekBadge').classList.contains('ok'), $('seekStatus').textContent);
+        ok('timing and position survive a reload', JSON.parse(safeGet('cc_seek')).runs.length === 2 && JSON.parse(safeGet('cc_seek')).pos === 9);
+        seekClearRuns(); setView('grid');
+        discs[5][1] = keepTitle; delete mbCache[keyOf(discs[3])]; mbCache = {}; buildGrid();
+      }
+
       // ── ACTIVE-FILTER PILLS ──
       await resetAll6();
       ok('no pills while nothing is filtered', $('filterPills').style.display === 'none' && !$('filterPills').children.length);

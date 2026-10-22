@@ -1,0 +1,66 @@
+
+/* ── PHYSICAL VISUALS: data side, wall, seek ─────────────────── */
+/* drawer: the data side sits exactly over the cover */
+.data-side{display:none;position:absolute;top:0;left:50%;transform:translateX(-50%);z-index:3;cursor:crosshair;touch-action:none}
+.data-side-read{display:none;position:absolute;left:0;right:0;z-index:4;text-align:center;font-family:'Share Tech Mono',monospace;font-size:.62rem;letter-spacing:1.2px;color:#e0ddd8;pointer-events:none;text-shadow:0 1px 3px #000}
+#infoModal.data-side-on .data-side,#infoModal.data-side-on .data-side-read{display:block}
+#infoModal.data-side-on .modal-art-wrap{visibility:hidden}
+#infoModal.data-side-on .modal-emblem{visibility:hidden}
+#dataSideBtn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.track-item.ds-flash{animation:dsFlash 1.2s ease}
+@keyframes dsFlash{0%,40%{background:rgba(255,74,80,.28)}100%{background:transparent}}
+
+/* views share a dark stage: diffraction only reads on a dark mirror */
+.wall-view,.seek-view{background:#050507;color:#e0ddd8;border:1px solid #1e1e26;padding:16px}
+.wall-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-bottom:14px}
+.wall-chips{display:flex;flex-wrap:wrap;gap:6px;flex:1 1 auto}
+.wall-view .attn-chip{color:#e0ddd8;border-color:#2a2a35}
+.wall-chip i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;vertical-align:0}
+.wk-ok{background:conic-gradient(#ff4a50,#d4a017,#2d9e5f,#2d6fa0,#7c3aed,#ff4a50)}
+.wk-over{background:#ff4a50}.wk-partial{background:#d4a017}.wk-nolen,.wk-unknown{background:#8e8b93}
+.wk-empty{border:1px dashed #c8c8d2}
+.wall-wrap{position:relative}
+.wall-canvas{display:block;width:100%;cursor:crosshair;touch-action:none}
+.wall-tip{position:absolute;z-index:5;width:260px;max-width:calc(100% - 8px);display:flex;flex-direction:column;gap:3px;padding:10px 12px;background:rgba(17,17,20,.96);border:1px solid #3a3a46;box-shadow:0 10px 30px rgba(0,0,0,.6);pointer-events:none}
+.wall-tip b{font-family:'Share Tech Mono',monospace;font-weight:400;font-size:.62rem;letter-spacing:1.5px;color:#ff5a5f}
+.wall-tip span{font-family:'Share Tech Mono',monospace;font-size:.6rem;letter-spacing:1px;color:#b8b5bd;text-transform:uppercase}
+.wall-tip strong{font-family:'Bebas Neue',sans-serif;font-weight:400;font-size:1.25rem;letter-spacing:1px;line-height:1.05}
+.wall-tip em{font-style:normal;font-size:.8rem;line-height:1.4;color:#cfccd4}
+.wall-view .ring-hint,.seek-view .ring-hint{color:#8e8b93}
+
+.seek-view{display:flex;flex-wrap:wrap;gap:24px;align-items:center}
+.seek-stage{flex:1 1 360px;min-width:0;max-width:640px;display:flex;justify-content:center}
+.seek-canvas{display:block;cursor:pointer;touch-action:manipulation}
+.seek-panel{flex:1 1 340px;min-width:0;display:flex;flex-direction:column;gap:14px}
+.seek-status{font-family:'Share Tech Mono',monospace;font-size:.65rem;letter-spacing:2px;color:#ff5a5f}
+.seek-artist{font-family:'Share Tech Mono',monospace;font-size:.72rem;letter-spacing:1.2px;color:#b8b5bd;text-transform:uppercase;margin-top:-8px}
+.seek-album{font-family:'Bebas Neue',sans-serif;font-size:2.1rem;letter-spacing:1px;line-height:1;margin-top:-6px;overflow-wrap:anywhere}
+.seek-go{display:flex;flex-wrap:wrap;gap:8px;align-items:stretch}
+.seek-go .btn{min-height:44px}
+.seek-slot{display:flex;align-items:center;gap:8px;padding-left:12px;border:1px solid #2a2a35;font-family:'Share Tech Mono',monospace;font-size:.62rem;letter-spacing:1px;color:#9a97a0}
+.seek-slot input{width:70px;height:42px;background:transparent;border:0;color:#e0ddd8;font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:1px;outline:none}
+.seek-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:1px solid #23232c}
+.seek-stats div{display:flex;flex-direction:column;gap:2px;padding:9px 11px}
+.seek-stats div+div{border-left:1px solid #23232c}
+.seek-stats span{font-family:'Share Tech Mono',monospace;font-size:.56rem;letter-spacing:1.5px;color:#9a97a0}
+.seek-stats b{font-family:'Bebas Neue',sans-serif;font-weight:400;font-size:1.5rem;letter-spacing:1px}
+.seek-calib{border:1px solid #23232c;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+.seek-calib-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-family:'Share Tech Mono',monospace;font-size:.62rem;letter-spacing:2px}
+.seek-badge{font-size:.56rem;letter-spacing:1.5px;padding:3px 7px;background:#2a1215;color:#ffd6d7}
+.seek-badge.ok{background:#1d3a2c;color:#b6f0cf}
+.seek-calib p{margin:0;font-size:.85rem;line-height:1.45;color:#cfccd4}
+.seek-sw{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.seek-sw .btn{min-height:44px}
+.seek-sw b{font-family:'Bebas Neue',sans-serif;font-weight:400;font-size:1.5rem;letter-spacing:1px;min-width:64px}
+.seek-clear{margin-left:auto;min-height:44px;background:none;border:0;color:#9a97a0;font-family:'Share Tech Mono',monospace;font-size:.62rem;letter-spacing:1px;text-decoration:underline;cursor:pointer}
+.seek-runs{display:flex;flex-wrap:wrap;gap:4px 14px;font-family:'Share Tech Mono',monospace;font-size:.62rem;letter-spacing:1px;color:#b8b5bd}
+.seek-runs:empty{display:none}
+.seek-dir{display:flex;flex-wrap:wrap;gap:6px}
+.seek-dir .btn{min-height:40px}
+.seek-view .btn{background:#111114;border-color:#2a2a35;color:#b8b5bd}
+.seek-view .btn.active{background:#1e1e26;border-color:#4a4a58;color:#e0ddd8}
+.seek-view .btn.add-disc-btn{background:var(--accent);border-color:var(--accent);color:#fff}
+@media (max-width:760px){
+  .wall-view,.seek-view{padding:10px}
+  .seek-album{font-size:1.6rem}
+}
