@@ -26,8 +26,14 @@ function discTiming(i){
   // a multi-disc release lists every disc ("2.3" = disc 2, track 3): keep the disc this slot holds
   const media=new Set(tracks.map(t=>{const m=/^(\d+)\./.exec(String(t.num));return m?m[1]:'1'}));
   if(media.size>1){
-    const dn=/\(\s*(?:disc|cd)\s*(\d+)\s*\)/i.exec(d[1]||'');
-    if(dn&&media.has(dn[1]))tracks=tracks.filter(t=>String(t.num).startsWith(dn[1]+'.'));
+    // "(Disc 2)", "[CD 2]", "CD2", "Disc 2 of 3", "- Disc 1"; without a matching number we can't know which disc this is
+    const dn=/\b(?:disc|disk|cd)\s*(\d+)\b/i.exec(d[1]||'');
+    if(!dn||!media.has(String(Number(dn[1])))){
+      const all=tracks.map(t=>lenSec(t.length));
+      return {kind:'multi',media:media.size,lens:all,titles:tracks.map(t=>t.title||''),total:all.reduce((a,b)=>a+b,0)};
+    }
+    const n=String(Number(dn[1]));
+    tracks=tracks.filter(t=>String(t.num).startsWith(n+'.'));
   }
   const lens=tracks.map(t=>lenSec(t.length));
   const titles=tracks.map(t=>t.title||'');
@@ -39,6 +45,19 @@ function discTiming(i){
   const rEnd=kind==='over'?null:CDP.rAt(total,total);
   const rRec=kind==='over'?58:Math.min(58,Math.sqrt(rEnd*rEnd+CDP.vp(total)*90/Math.PI));
   return {kind,lens,titles,total,starts,rEnd,rRec,missing,multi:media.size>1};
+}
+// One cache for the drawer, the wall and seek, keyed on the whole tracklist: a refresh or edition change
+// that keeps the track count (or even the first length) still invalidates it.
+var TM_CACHE=[];
+function timingSig(i){
+  const d=discs[i];if(isSlotEmpty(d))return 'E';if(isWish(i))return 'W';
+  const e=mbCache[keyOf(d)];if(!e)return 'U|'+keyOf(d);
+  return keyOf(d)+'|'+(e.tracks||[]).map(t=>t.num+'='+t.length).join(',');
+}
+function timingFor(i){
+  const sig=timingSig(i),c=TM_CACHE[i];
+  if(c&&c.sig===sig)return c.tm;
+  const tm=discTiming(i);TM_CACHE[i]={sig,tm};return tm;
 }
 function trackAtTime(tm,t){let k=0;for(let j=0;j<tm.starts.length;j++)if(t>=tm.starts[j])k=j;return k}
 function fmtSec(s){s=Math.max(0,Math.round(s));const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return (h?h+':'+String(m).padStart(2,'0'):m)+':'+String(x).padStart(2,'0')}
@@ -107,7 +126,7 @@ function drawDataSide(c,x,y,k,tm,light,o){
   if(tm.kind==='over'){c.strokeStyle='#ff4a50';c.lineWidth=o.detail?3:2;c.beginPath();c.arc(x,y,59.5*k,0,TAU);c.stroke()}
   if(tm.kind==='partial'){c.setLineDash([2,2]);c.strokeStyle='#d4a017';c.lineWidth=1.5;c.beginPath();c.arc(x,y,tm.rEnd*k+1,0,TAU);c.stroke();c.setLineDash([])}
   c.fillStyle='#050507';c.beginPath();c.arc(x,y,7.5*k,0,TAU);c.fill();
-  if(tm.kind==='nolen'||tm.kind==='unknown'){c.fillStyle='rgba(230,228,224,.85)';c.font=Math.max(10,Math.round(k*20))+'px "Share Tech Mono",monospace';c.textAlign='center';c.textBaseline='middle';c.fillText('?',x,y+.5)}
+  if(tm.kind==='nolen'||tm.kind==='unknown'||tm.kind==='multi'){c.fillStyle='rgba(230,228,224,.85)';c.font=Math.max(10,Math.round(k*20))+'px "Share Tech Mono",monospace';c.textAlign='center';c.textBaseline='middle';c.fillText('?',x,y+.5)}
 }
 var PH_REDUCE=(()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches}catch(e){return false}})();
 function timingNote(tm){
@@ -116,6 +135,7 @@ function timingNote(tm){
     case 'over':return `The looked-up tracklist adds up to ${fmtSec(tm.total)}, more than one CD can hold (80:00). It probably matched a box set or another edition: ⇄ EDITION picks the right one.`;
     case 'partial':return `${tm.missing} of ${tm.lens.length} tracks have no length, so the recorded area shown is too small.`;
     case 'nolen':return 'The matched release has no track lengths. Another edition (⇄ EDITION) may have them.';
+    case 'multi':return `The matched release is a ${tm.media}-disc set and this slot doesn't say which disc it holds. Add "(Disc N)" to the album name, or pick a single-disc edition with ⇄ EDITION.`;
     case 'unknown':return 'Not looked up yet. ⬇ FETCH ART (in TOOLS) looks it up along with the cover.';
     case 'wish':return 'Wishlist: not in the changer.';
     default:return 'Nothing in this slot.';
@@ -123,7 +143,7 @@ function timingNote(tm){
 }
 
 // ── 1. DATA SIDE in the disc drawer: flip the cover over ──
-var ds={on:false,ptr:null,raf:0,clock:0,last:0,cacheKey:null,tm:null};
+var ds={on:false,ptr:null,raf:0,clock:0,last:0};
 function toggleDataSide(force){
   ds.on=force!==undefined?!!force:!ds.on;
   $('infoModal').classList.toggle('data-side-on',ds.on);
@@ -133,10 +153,7 @@ function toggleDataSide(force){
 }
 function dsTiming(){
   const i=currentModalIndex;if(i===null||i===undefined)return null;
-  const d=discs[i],e=d&&mbCache[keyOf(d)];
-  const key=i+'|'+keyOf(d)+'|'+(e&&e.tracks?e.tracks.length+':'+(e.tracks[0]&&e.tracks[0].length):'');
-  if(key!==ds.cacheKey){ds.cacheKey=key;ds.tm=discTiming(i)}
-  return ds.tm;
+  return timingFor(i);
 }
 function dsLoop(ts){
   ds.raf=0;
@@ -172,7 +189,7 @@ function drawDrawerDisc(){
   const r=$('dataSideRead');
   if(r){
     const top=Math.max(0,side-26)+'px';if(r.style.top!==top)r.style.top=top;
-    const foot=tm.kind==='ok'||tm.kind==='partial'?`${fmtSec(tm.total)} · MUSIC ENDS AT ${tm.rEnd.toFixed(1)} MM · ${Math.round(CDP.rpm(CDP.R0))}→${Math.round(CDP.rpm(tm.rEnd))} RPM`:tm.kind.toUpperCase()==='OVER'?'TRACKLIST LONGER THAN A CD':'NO TIMING';
+    const foot=tm.kind==='ok'||tm.kind==='partial'?`${fmtSec(tm.total)} · MUSIC ENDS AT ${tm.rEnd.toFixed(1)} MM · ${Math.round(CDP.rpm(CDP.R0))}→${Math.round(CDP.rpm(tm.rEnd))} RPM`:tm.kind==='over'?'TRACKLIST LONGER THAN A CD':tm.kind==='multi'?`${tm.media}-DISC SET — WHICH DISC IS THIS?`:'NO TIMING';
     const txt=read||foot;if(r.textContent!==txt)r.textContent=txt;
   }
 }
@@ -194,24 +211,27 @@ function drawDrawerDisc(){
 })();
 
 // ── 2. WALL: every slot, data side up, one light for all of them ──
-var wall={order:'slot',filter:null,ptr:null,hover:null,raf:0,clock:0,last:0,lastIdle:0,dirty:true,cells:[],tms:null,cell:52};
-function wallTimings(){if(!wall.tms||wall.tms.length!==discs.length)wall.tms=discs.map((_,i)=>discTiming(i));return wall.tms}
-function wallInvalidate(){if(!wall)return;wall.tms=null;wall.dirty=true}
-var WALL_KINDS=[['ok','MEASURED'],['over','TOO LONG FOR ONE CD'],['partial','MISSING SOME LENGTHS'],['nolen','NO TRACK LENGTHS'],['unknown','NOT LOOKED UP YET'],['empty','EMPTY / WISHLIST']];
+var wall={order:'slot',filter:null,ptr:null,hover:null,raf:0,clock:0,last:0,lastIdle:0,dirty:true,cells:[],cell:52,chipSig:null};
+function wallTimings(){return discs.map((_,i)=>timingFor(i))}
+function wallInvalidate(){if(!wall)return;wall.dirty=true}
+var WALL_KINDS=[['ok','MEASURED'],['over','TOO LONG FOR ONE CD'],['multi','SET — WHICH DISC?'],['partial','MISSING SOME LENGTHS'],['nolen','NO TRACK LENGTHS'],['unknown','NOT LOOKED UP YET'],['empty','EMPTY / WISHLIST']];
 function wallKindOf(tm){return tm.kind==='wish'?'empty':tm.kind}
 function renderWall(){
   if(!wall)return;
-  wallInvalidate();
-  const tms=wallTimings(),counts={};tms.forEach(t=>{const k=wallKindOf(t);counts[k]=(counts[k]||0)+1});
-  $('wallChips').innerHTML=WALL_KINDS.filter(([k])=>counts[k]).map(([k,l])=>`<button type="button" class="attn-chip wall-chip${wall.filter===k?' on':''}" data-wall-kind="${k}" aria-pressed="${wall.filter===k}"><i class="wk-${k}"></i>${counts[k]} ${l}</button>`).join('');
+  wallInvalidate();wall.chipSig=null;wallChips(wallTimings());
   $('wallOrder').value=wall.order;
   if(!wall.raf){wall.last=0;wall.raf=requestAnimationFrame(wallLoop)}
+}
+function wallChips(tms){
+  const counts={};tms.forEach(t=>{const k=wallKindOf(t);counts[k]=(counts[k]||0)+1});
+  const sig=JSON.stringify(counts)+'|'+wall.filter;if(sig===wall.chipSig)return;wall.chipSig=sig;
+  $('wallChips').innerHTML=WALL_KINDS.filter(([k])=>counts[k]).map(([k,l])=>`<button type="button" class="attn-chip wall-chip${wall.filter===k?' on':''}" data-wall-kind="${k}" aria-pressed="${wall.filter===k}"><i class="wk-${k}"></i>${counts[k]} ${l}</button>`).join('');
 }
 function wallSetOrder(v){wall.order=v==='len'?'len':'slot';wall.dirty=true}
 function wallOrdered(){
   const tms=wallTimings(),idx=discs.map((_,i)=>i);
   if(wall.order==='slot')return idx;
-  const rank={ok:0,partial:1,over:2,nolen:3,unknown:4,wish:5,empty:6};
+  const rank={ok:0,partial:1,over:2,multi:3,nolen:4,unknown:5,wish:6,empty:7};
   return idx.sort((a,b)=>rank[tms[a].kind]-rank[tms[b].kind]||(tms[a].total||0)-(tms[b].total||0)||a-b);
 }
 function wallLoop(ts){
@@ -232,6 +252,7 @@ function drawWall(){
   if(cv.width!==Math.round(W*dpr)||cv.height!==Math.round(H*dpr)){cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr)}
   const c=cv.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,W,H);
   const tms=wallTimings(),order=wallOrdered(),f=currentFilters(),filtered=anyFilter(f),k=(cell/2-3)/60;
+  wallChips(tms);
   const light=wall.ptr||{x:W/2+Math.cos(wall.clock*.25)*W*.9,y:H/2+Math.sin(wall.clock*.25)*H*1.2};
   wall.cells=order;
   order.forEach((i,p)=>{
@@ -293,7 +314,7 @@ function seekTo(i){
   const d=seekDelta(seekCur(),i);
   sk.anim={start:sk.pos,d,T:seekDuration(d),t:0,target:i};sk.lastSeek={d,T:sk.anim.T};
   $('seekSlot').value=i+1;
-  if(currentView==='seek'&&!sk.raf){sk.last=0;sk.raf=requestAnimationFrame(seekLoop)}
+  seekKick();
   if(currentView!=='seek'){sk.pos=i;sk.anim=null}
   seekSave();seekPanel();
 }
@@ -303,7 +324,7 @@ function renderSeek(){
   $('seekDirShort').classList.toggle('active',sk.dir==='shortest');$('seekDirOne').classList.toggle('active',sk.dir==='oneway');
   $('seekDirShort').setAttribute('aria-pressed',String(sk.dir==='shortest'));$('seekDirOne').setAttribute('aria-pressed',String(sk.dir==='oneway'));
   seekPanel();
-  if(!sk.raf){sk.last=0;sk.raf=requestAnimationFrame(seekLoop)}
+  seekKick();
 }
 function seekLoop(ts){
   sk.raf=0;
@@ -316,9 +337,10 @@ function seekLoop(ts){
     if(u>=1){sk.pos=A.target;sk.vel=0;sk.anim=null;seekSave();seekPanel()}
   }
   drawSeek();
-  if(sk.anim||sk.sw)seekPanel(true);
-  sk.raf=requestAnimationFrame(seekLoop);
+  // only keep the loop running while something moves; idle, the carousel is drawn once and left alone
+  if(sk.anim||sk.sw){seekPanel(true);sk.raf=requestAnimationFrame(seekLoop)}else sk.last=0;
 }
+function seekKick(){if(sk&&!sk.raf&&currentView==='seek'){sk.last=0;sk.raf=requestAnimationFrame(seekLoop)}}
 function drawSeek(){
   const cv=$('seekCanvas');if(!cv)return;
   const S=Math.round(Math.min(cv.parentElement.clientWidth,640));if(!S)return;
@@ -402,8 +424,10 @@ function seekSetDir(v){sk.dir=v==='oneway'?'oneway':'shortest';seekSave();render
     $('seekSlot').value=i+1;seekPanel();seekTo(i);
   });
   $('seekSlot').addEventListener('input',()=>seekPanel());
-  addEventListener('resize',()=>{if(currentView==='seek')drawSeek()});
+  addEventListener('resize',seekKick);
 })();
 // a disc sent to the changer from the drawer moves the carousel too
 var _phPlayOnChanger=playOnChanger;
-playOnChanger=async function(){const i=currentModalIndex,hooked=!!webhookCfg().url;await _phPlayOnChanger();if(hooked&&i!==null&&i!==undefined&&!isSlotEmpty(discs[i]))seekTo(i)};
+playOnChanger=async function(){const i=currentModalIndex;const sent=await _phPlayOnChanger();if(sent===true&&i!==null&&i!==undefined&&!isSlotEmpty(discs[i]))seekTo(i);return sent};
+// canvases drawn on demand must redraw once the web fonts arrive
+try{document.fonts&&document.fonts.ready.then(()=>{if(wall)wall.dirty=true;seekKick()})}catch(e){}

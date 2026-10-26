@@ -1317,6 +1317,55 @@
         discs[5][1] = keepTitle; delete mbCache[keyOf(discs[3])]; mbCache = {}; buildGrid();
       }
 
+      // ── REVIEW REGRESSIONS (external review, 26 Oct 2026) ──
+      {
+        // 1. the data side must follow a refreshed tracklist, even when the track count and first length are unchanged
+        mbCache[keyOf(discs[3])] = { tracks: [{ num: 1, length: '5:00' }, { num: 2, length: '5:00' }] };
+        openInfoModal(3); await wait(200); toggleDataSide(true); await wait(200);
+        const before = dsTiming().total;
+        mbCache[keyOf(discs[3])] = { tracks: [{ num: 1, length: '5:00' }, { num: 2, length: '25:00' }] };
+        await wait(150);
+        ok('REGRESSION: data side follows a refreshed tracklist (same count + first length)', before === 600 && dsTiming().total === 1800, before + ' -> ' + dsTiming().total);
+        toggleDataSide(false); closeModal();
+        setView('wall'); await wait(200);
+        mbCache[keyOf(discs[3])] = { tracks: [{ num: 1, length: '5:00' }, { num: 2, length: '40:00' }] };
+        ok('REGRESSION: the wall follows a refreshed tracklist without a filter change', wallTimings()[3].total === 2700, wallTimings()[3].total);
+        setView('grid');
+        // 2. a multi-disc release where the slot title does not say which disc
+        const keep4 = discs[4][1];
+        const set = [{ num: '1.1', length: '30:00' }, { num: '1.2', length: '20:00' }, { num: '2.1', length: '10:00' }, { num: '2.2', length: '15:00' }];
+        mbCache[keyOf(discs[4])] = { tracks: set };
+        ok('REGRESSION: a multi-disc release with no disc number is not drawn as one 75-minute disc', discTiming(4).kind === 'multi', discTiming(4).kind + ' ' + discTiming(4).total);
+        for (const [t, want] of [['Set [CD 2]', 1500], ['Set CD2', 1500], ['Set (Disc 2 of 2)', 1500], ['Set - Disc 1', 3000], ['Set (Disc 3)', null]]) {
+          discs[4][1] = t; mbCache[keyOf(discs[4])] = { tracks: set };
+          const tm = discTiming(4);
+          ok('multi-disc: "' + t + '" ' + (want ? 'uses only that disc' : 'is flagged (no disc 3 in the release)'), want ? tm.kind === 'ok' && tm.total === want : tm.kind === 'multi', tm.kind + ' ' + tm.total);
+        }
+        discs[4][1] = keep4;
+        // 3. a failed webhook from the drawer must not turn the carousel
+        const keepSend = sendWebhook, keepHook = safeGet(HOOK_KEY);
+        safeSet(HOOK_KEY, JSON.stringify({ url: 'https://ha.example.test/api/webhook/x', markPlaying: false }));
+        sendWebhook = async () => ({ ok: false, error: 'HTTP 500' });
+        sk.pos = 0; sk.anim = null; seekSave();
+        openInfoModal(12); await wait(200);
+        await playOnChanger(); await wait(50);
+        ok('REGRESSION: a failed webhook does not move the carousel', seekCur() === 0 && !sk.anim, 'at ' + seekCur());
+        sendWebhook = async () => ({ ok: true, confirmed: true });
+        await playOnChanger(); await wait(50);
+        ok('a successful webhook does move it', seekCur() === 12 || !!(sk.anim && sk.anim.target === 12), 'at ' + seekCur());
+        sendWebhook = keepSend; if (keepHook === null) localStorage.removeItem(HOOK_KEY); else safeSet(HOOK_KEY, keepHook);
+        closeModal(); sk.anim = null; sk.pos = 0;
+        // 4. the SEEK view must not redraw while nothing is moving
+        setView('seek'); await wait(400);
+        const keepDraw = drawSeek; let draws = 0; drawSeek = function () { draws++; return keepDraw.apply(this, arguments); };
+        await wait(1000);
+        ok('REGRESSION: an idle SEEK view stops redrawing', draws <= 2, draws + ' draws in 1 s');
+        draws = 0; seekTo(5); await wait(Math.ceil(seekDuration(5) * 1000) + 400);
+        ok('...but it still animates a seek and lands on the slot', seekCur() === 5 && draws > 5, draws + ' draws, at ' + seekCur());
+        drawSeek = keepDraw; seekClearRuns(); setView('grid');
+        delete mbCache[keyOf(discs[3])]; delete mbCache[keyOf(discs[4])]; buildGrid();
+      }
+
       // ── ACTIVE-FILTER PILLS ──
       await resetAll6();
       ok('no pills while nothing is filtered', $('filterPills').style.display === 'none' && !$('filterPills').children.length);

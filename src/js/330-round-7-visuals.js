@@ -185,6 +185,7 @@ function afterGridRefresh(){
   markNpTile();
   if(currentView==='wall'&&typeof renderWall==='function')renderWall();
   if(typeof wallInvalidate==='function')wallInvalidate();
+  if(currentView==='seek'&&typeof seekKick==='function')seekKick();
   if(document.body.classList.contains('zoom-cards'))fillCardTracks();
   if(document.body.classList.contains('showroom'))observeTileGlows();
 }

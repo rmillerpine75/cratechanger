@@ -283,17 +283,18 @@ async function sendWebhook(url,payload){
   }
 }
 async function playOnChanger(){
-  if(currentModalIndex===null)return;
-  const i=currentModalIndex;const d=discs[i];if(isSlotEmpty(d))return;
+  if(currentModalIndex===null)return false;
+  const i=currentModalIndex;const d=discs[i];if(isSlotEmpty(d))return false;
   const cfg=webhookCfg();
-  if(!cfg.url){openSettings();return}
-  const err=validWebhookUrl(cfg.url);if(err){toast('WEBHOOK: '+err.toUpperCase(),6000);return}
+  if(!cfg.url){openSettings();return false}
+  const err=validWebhookUrl(cfg.url);if(err){toast('WEBHOOK: '+err.toUpperCase(),6000);return false}
   const btn=$('playChangerBtn');btn.disabled=true;
   const r=await sendWebhook(cfg.url,{event:'play',slot:i+1,slot_padded:slotNum(i),artist:d[0],album:d[1],source:'cratechanger'});
   btn.disabled=false;
-  if(!r.ok){toast('COULD NOT REACH THE CHANGER: '+String(r.error).toUpperCase(),5000);return}
+  if(!r.ok){toast('COULD NOT REACH THE CHANGER: '+String(r.error).toUpperCase(),5000);return false}
   if(cfg.markPlaying&&currentModalIndex===i){setNowPlaying();logPlay()}
   toast(r.confirmed?'▶ SENT TO THE CHANGER ✓':'▶ SENT — NO CONFIRMATION (SEE ⚙ SETTINGS TO TURN IT ON)',4500);
+  return true;
 }
 function saveWebhookSettings(){
   const url=$('hookUrl').value.trim();
