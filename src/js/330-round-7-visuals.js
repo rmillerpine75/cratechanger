@@ -161,7 +161,7 @@ function uiApplyFilters(){
 
 // ── VIEWS: grid · list · carousel (the changer's own ring) · spines ──
 let currentView='grid';
-const VIEW_PANES={ring:'ringView',spines:'spineView',changer:'changerView',emblems:'emblemView',city:'cityView',wall:'wallView',seek:'seekView'};
+const VIEW_PANES={ring:'ringView',spines:'spineView',changer:'changerView',emblems:'emblemView',city:'cityView',wall:'wallView',seek:'seekView',deep:'deepView'};
 function setView(v){
   if(!['grid','list',...Object.keys(VIEW_PANES)].includes(v))v='grid';
   currentView=v;safeSet('cc_view',v);
@@ -177,6 +177,7 @@ function setView(v){
   if(v==='city')renderCity();
   if(v==='wall'&&typeof renderWall==='function')renderWall();
   if(v==='seek'&&typeof renderSeek==='function')renderSeek();
+  if(v==='deep'&&typeof renderDeep==='function')renderDeep();
 }
 let altT=null;
 function afterGridRefresh(){
@@ -186,6 +187,7 @@ function afterGridRefresh(){
   if(currentView==='wall'&&typeof renderWall==='function')renderWall();
   if(typeof wallInvalidate==='function')wallInvalidate();
   if(currentView==='seek'&&typeof seekKick==='function')seekKick();
+  if(currentView==='deep'&&typeof deepKick==='function')deepKick();
   if(document.body.classList.contains('zoom-cards'))fillCardTracks();
   if(document.body.classList.contains('showroom'))observeTileGlows();
 }

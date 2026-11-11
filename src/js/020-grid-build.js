@@ -59,6 +59,8 @@ function currentFilters(){
   return {q:$('searchInput').value.trim().toLowerCase(),artist:$('artistFilter').value,flag:$('flagFilter').value,
           genre:$('genreFilter').value,decade:$('decadeFilter').value,country:$('originFilter').value};
 }
+// days since the disc in slot i was last played (Infinity = never)
+function daysSincePlayed(i){const ph=getMeta(i).playHistory;if(!ph||!ph.length)return Infinity;const t=new Date(ph[ph.length-1]).getTime();return isNaN(t)?Infinity:(Date.now()-t)/864e5}
 function anyFilter(f){return !!(f.q||f.artist||f.flag||f.genre||f.decade||f.country)}
 function matches(i,f){
   const d=discs[i];
@@ -75,6 +77,8 @@ function matches(i,f){
   if(f.artist&&!(d&&d[0]===f.artist))return false;
   if(f.flag==='_empty'){if(!(isSlotEmpty(d)&&!isWish(i)))return false}
   else if(f.flag==='_noart'){if(isSlotEmpty(d)||isWish(i)||slotArtSources(i).length)return false}
+  else if(f.flag==='_unplayed'){if(isSlotEmpty(d)||isWish(i)||getMeta(i).playHistory.length)return false}
+  else if(f.flag==='_stale'){if(isSlotEmpty(d)||isWish(i)||daysSincePlayed(i)<365)return false}
   else if(f.flag&&!getMeta(i).flags.includes(f.flag))return false;
   if(f.genre&&!effectiveGenres(i).includes(f.genre))return false;
   if(f.decade&&decadeOf(effectiveYear(i))!==f.decade)return false;

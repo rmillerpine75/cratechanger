@@ -1366,6 +1366,101 @@
         delete mbCache[keyOf(discs[3])]; delete mbCache[keyOf(discs[4])]; buildGrid();
       }
 
+      // ── ONE SURFACE: play-history filters, aging, ask the crate, deep zoom, music light, immersive ──
+      {
+        const keepMeta = JSON.stringify(meta), keepArtists = artistCache, keepMb = mbCache;
+        meta = {}; mbCache = {}; artistCache = { nor: { country: 'NO', genres: ['black metal'] }, usa: { country: 'US', genres: ['death metal'] } };
+        const day = 864e5, ago = d => new Date(Date.now() - d * day).toISOString();
+        getMeta(1).playHistory = [ago(3)]; getMeta(2).playHistory = [ago(200)]; getMeta(3).playHistory = [ago(500)];
+        mbCache[keyOf(discs[1])] = { artistId: 'nor', tags: ['1996'], tracks: [{ num: 1, length: '30:00' }, { num: 2, length: '20:00' }] };
+        mbCache[keyOf(discs[2])] = { artistId: 'nor', tags: ['2003'], tracks: [{ num: 1, length: '40:00' }] };
+        mbCache[keyOf(discs[3])] = { artistId: 'usa', tags: ['1994'], tracks: [{ num: 1, length: '35:00' }] };
+        buildGrid(); populateExtraFilters();
+        ok('days since played: recent, old, never', Math.round(daysSincePlayed(1)) === 3 && Math.round(daysSincePlayed(3)) === 500 && daysSincePlayed(9) === Infinity);
+        const shown = fl => { $('flagFilter').value = fl; applyFilters(); const f = currentFilters(); return discs.map((d, i) => i).filter(i => matches(i, f)); };
+        ok('NOT PLAYED IN A YEAR includes the 500-day disc and the never-played, not the recent ones', (() => { const v = shown('_stale'); return v.includes(3) && v.includes(9) && !v.includes(1) && !v.includes(2) && !v.includes(128); })());
+        ok('NEVER PLAYED excludes anything with a play', (() => { const v = shown('_unplayed'); return v.includes(9) && !v.includes(1) && !v.includes(3); })());
+        ok('the new filters show as pills', /NEVER PLAYED/.test($('filterPills').textContent));
+        $('flagFilter').value = ''; applyFilters();
+        toggleAging(false);
+        ok('aging off: every disc at full brightness', ageAlpha(3) === 1 && ageAlpha(9) === 1);
+        toggleAging(true);
+        ok('aging on: played this month = full, a year or never = 35%, in between fades', ageAlpha(1) === 1 && ageAlpha(3) === 0.35 && ageAlpha(9) === 0.35 && ageAlpha(2) > 0.6 && ageAlpha(2) < 0.75 && $('wallAgeBtn').getAttribute('aria-pressed') === 'true' && safeGet('cc_aging') === '1', ageAlpha(2).toFixed(2));
+        toggleAging(false);
+        // ask the crate
+        ok('a plain search is not treated as a command', !askIsCommand('absu') && !askIsCommand('the chasm') && askIsCommand('play absu') && askIsCommand('what have I never played') && askIsCommand('slot 12'));
+        let a = askCrate('Norway from the 90s');
+        ok('ask: "Norway from the 90s" sets origin + decade and counts the result', a.set.country === 'NO' && a.set.decade === '1990s' && a.count === 1 && $('originFilter').value === 'NO' && $('decadeFilter').value === '1990s', JSON.stringify(a));
+        a = askCrate('show me some norwegian black metal');
+        ok('ask: demonym + genre', a.set.country === 'NO' && a.set.genre === 'black metal' && a.count === 2, JSON.stringify(a));
+        a = askCrate("What haven't I played this year?");
+        ok('ask: "what haven\'t I played this year" → not played in a year', a.set.flag === '_stale' && $('flagFilter').value === '_stale' && !$('originFilter').value, JSON.stringify(a.set));
+        a = askCrate('what have I never played');
+        ok('ask: "never played"', a.set.flag === '_unplayed');
+        a = askCrate('play something slow from Norway');
+        ok('ask: says plainly that it has no tempo data, still applies the rest', /NO TEMPO OR MOOD DATA/.test(a.say) && a.set.country === 'NO', a.say);
+        a = askCrate('most played');
+        ok('ask: sort by most played', a.sort === 'plays' && $('sortSelect').value === 'plays');
+        a = askCrate('clear');
+        ok('ask: "clear" shows everything again', a.cleared && !anyFilter(currentFilters()) && $('sortSelect').value === 'slot');
+        a = askCrate('open slot 4'); await wait(200);
+        ok('ask: "open slot 4" opens that disc', a.opened === 3 && $('infoModal').classList.contains('open') && currentModalIndex === 3);
+        closeModal();
+        const al = discs[7][1];
+        a = askCrate('play ' + al); await wait(200);
+        ok('ask: "play <album>" opens the one disc it matches (no changer set up: it does not pretend to play)', a.opened === 7 && !a.played && /PRESS ▶ TO PLAY/.test(a.say), a.say);
+        closeModal();
+        a = askCrate('play zzqqxx');
+        ok('ask: no match says so and leaves the filters alone', a.count === 0 && /NOTHING IN THE CRATE MATCHES/.test(a.say) && !anyFilter(currentFilters()));
+        a = askCrate('slot 129');
+        ok('ask: an empty slot is reported, not opened', /EMPTY OR DOES NOT EXIST/.test(a.say) && !$('infoModal').classList.contains('open'));
+        $('searchInput').value = 'show me the 90s'; $('searchInput').dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+        ok('typing a request in the search box + Enter runs it', $('decadeFilter').value === '1990s' && $('searchInput').value === '');
+        askCrate('clear');
+        // deep zoom
+        setView('deep'); await wait(500);
+        const dc = $('deepCanvas');
+        ok('VIEW: DEEP ZOOM starts on the whole crate', getComputedStyle($('deepView')).display !== 'none' && dc.width > 0 && Math.abs(deep.cam.k - deep.k0) < 1e-9 && /THE CRATE · 200 SLOTS/.test($('deepWhere').textContent), $('deepWhere').textContent);
+        await wait(400);
+        ok('an idle deep view stops redrawing', deep.raf === 0);
+        deepFocusDisc(1, 0); await wait(200);
+        ok('flying to a disc names it and offers OPEN DISC', deep.focus === 1 && /^SLOT 002 · /.test($('deepWhere').textContent) && /50:00 · 2 TRACKS/.test($('deepWhat').textContent) && $('deepOpenBtn').style.display !== 'none', $('deepWhere').textContent + ' | ' + $('deepWhat').textContent);
+        const c1 = deepDiscCenter(1), rr = CDP.rAt(1800, 3000);
+        deepFlyTo({ x: c1.x, y: c1.y + rr + 0.2, k: 400 }, 0); await wait(200);
+        ok('under the glass: the readout gives the track and time at that radius', /^TRACK 2 · /.test($('deepWhat').textContent) && /INTO THE DISC/.test($('deepWhat').textContent), $('deepWhat').textContent);
+        deepFlyTo({ x: c1.x, y: c1.y + 30, k: 3000 }, 0); await wait(200);
+        ok('zoomed to the groove: explains the spiral', /ONE SPIRAL, A TURN EVERY 1\.6 µm/.test($('deepNote').textContent), $('deepNote').textContent);
+        deepFlyTo({ x: c1.x, y: c1.y + 30, k: 22000 }, 0); await wait(200);
+        ok('zoomed to the pits: says the pattern is illustrative', /PITS: 0\.5 µm WIDE/.test($('deepNote').textContent) && /ILLUSTRATIVE/.test($('deepNote').textContent) && $('deepScaleLabel').textContent === '5 µm', $('deepScaleLabel').textContent);
+        const px = dc.getContext('2d').getImageData(Math.floor(dc.width / 2), Math.floor(dc.height / 2), 1, 1).data;
+        ok('the pit level actually paints', px[3] === 255 && (px[0] + px[1] + px[2]) > 0);
+        ok('scale bar: nice round lengths with the right unit', deepScale(5).label === '20 MM' && deepScale(400).label === '200 µm' && deepScale(60000).label === '2 µm');
+        const k1 = deep.cam.k, rb = dc.getBoundingClientRect();
+        dc.dispatchEvent(new WheelEvent('wheel', { deltaY: 300, clientX: rb.left + 100, clientY: rb.top + 100, bubbles: true, cancelable: true }));
+        ok('the wheel zooms out', deep.cam.k < k1);
+        dc.dispatchEvent(new KeyboardEvent('keydown', { key: '0', bubbles: true, cancelable: true })); await wait(1300);
+        ok('0 flies back to the whole crate', Math.abs(deep.cam.k - deep.k0) < 1e-6 && deep.focus === null, deep.cam.k + ' vs ' + deep.k0);
+        deep.cam.k = 1e9; deepClamp(deep.cam);
+        ok('zoom is clamped at both ends', deep.cam.k === DEEP_MAXK && deepClamp({ x: -5, y: -5, k: 0 }).k === deep.k0 * 0.8);
+        deepHome(); await wait(1200);
+        // music-driven light
+        const L0 = sceneLight(1000, 500, { x: 10, y: 20 }, 1);
+        ok('light: the pointer when nothing else is going on', L0.x === 10 && L0.y === 20);
+        const keepListen = { on: listen.on, bass: listen.bass, mid: listen.mid, lv: listen.lv, beat: listen.beat };
+        Object.assign(listen, { on: true, bass: 0.8, mid: 0.5, lv: 0.6, beat: 1 });
+        const L1 = sceneLight(1000, 500, { x: 10, y: 20 }, 1); await wait(60); const L2 = sceneLight(1000, 500, { x: 10, y: 20 }, 1);
+        ok('light: with 🎤 LISTEN on, the music takes over and moves it', L1.music === true && L2.music === true && (L1.x !== L2.x || L1.y !== L2.y) && L1.s > 0.5 && lightIsLive());
+        Object.assign(listen, keepListen);
+        ok('light: back to the pointer when listening stops', !sceneLight(1000, 500, { x: 10, y: 20 }, 1).music);
+        // immersive
+        toggleImmersive(true);
+        ok('IMMERSIVE hides the header and toolbar and leaves one way back', getComputedStyle(document.querySelector('header')).display === 'none' && getComputedStyle(document.querySelector('.toolbar')).display === 'none' && getComputedStyle($('immersiveExit')).display !== 'none');
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+        ok('Esc brings the controls back', !document.body.classList.contains('immersive') && getComputedStyle(document.querySelector('header')).display !== 'none' && $('immersiveExit').style.display === 'none');
+        setView('grid');
+        meta = JSON.parse(keepMeta); mbCache = keepMb; artistCache = keepArtists; $('sortSelect').value = 'slot'; clearAllFilters(); populateExtraFilters(); buildGrid();
+      }
+
       // ── ACTIVE-FILTER PILLS ──
       await resetAll6();
       ok('no pills while nothing is filtered', $('filterPills').style.display === 'none' && !$('filterPills').children.length);

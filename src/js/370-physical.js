@@ -59,6 +59,27 @@ function timingFor(i){
   if(c&&c.sig===sig)return c.tm;
   const tm=discTiming(i);TM_CACHE[i]={sig,tm};return tm;
 }
+// Where the light is for a whole-canvas scene. The room's music wins when 🎤 LISTEN is on (bass sweeps the
+// light round, level brightens it); then the pointer; then the phone's tilt; otherwise a slow orbit.
+var scene={ang:0,last:0,tilt:null,tiltAt:0,age:false};
+function lightIsLive(){return (typeof listen!=='undefined'&&listen.on)||(scene.tilt&&performance.now()-scene.tiltAt<1500)}
+function sceneLight(W,H,ptr,clock){
+  const now=performance.now(),dt=scene.last?Math.min(.1,(now-scene.last)/1000):0;scene.last=now;
+  if(typeof listen!=='undefined'&&listen.on){
+    scene.ang+=dt*(.25+listen.bass*5+listen.beat*3);
+    const R=Math.max(W,H)*(.35+.5*listen.mid);
+    return {x:W/2+Math.cos(scene.ang)*R,y:H/2+Math.sin(scene.ang)*R,s:.26+.42*Math.min(1,listen.lv*1.6)+.1*listen.beat,music:true};
+  }
+  if(ptr)return ptr;
+  if(scene.tilt&&now-scene.tiltAt<1500)return {x:W/2+scene.tilt.x*W,y:H/2+scene.tilt.y*H};
+  return {x:W/2+Math.cos(clock*.25)*W*.9,y:H/2+Math.sin(clock*.25)*H*1.2};
+}
+// AGING: a disc played in the last month is at full brightness; it dulls to 35% by a year (or if never played)
+function ageAlpha(i){
+  if(!scene.age)return 1;
+  const d=daysSincePlayed(i);if(d<=30)return 1;if(d>=365)return .35;
+  return 1-.65*(d-30)/335;
+}
 function trackAtTime(tm,t){let k=0;for(let j=0;j<tm.starts.length;j++)if(t>=tm.starts[j])k=j;return k}
 function fmtSec(s){s=Math.max(0,Math.round(s));const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return (h?h+':'+String(m).padStart(2,'0'):m)+':'+String(x).padStart(2,'0')}
 
@@ -238,7 +259,8 @@ function wallLoop(ts){
   wall.raf=0;
   if(currentView!=='wall')return;
   const dt=wall.last?Math.min(.1,(ts-wall.last)/1000):0;wall.last=ts;wall.clock+=dt;
-  if(!wall.ptr&&!PH_REDUCE&&wall.clock-wall.lastIdle>1/20){wall.dirty=true;wall.lastIdle=wall.clock}
+  if(lightIsLive())wall.dirty=true;
+  else if(!wall.ptr&&!PH_REDUCE&&wall.clock-wall.lastIdle>1/20){wall.dirty=true;wall.lastIdle=wall.clock}
   if(wall.dirty){wall.dirty=false;drawWall()}
   wall.raf=requestAnimationFrame(wallLoop);
 }
@@ -253,12 +275,12 @@ function drawWall(){
   const c=cv.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,W,H);
   const tms=wallTimings(),order=wallOrdered(),f=currentFilters(),filtered=anyFilter(f),k=(cell/2-3)/60;
   wallChips(tms);
-  const light=wall.ptr||{x:W/2+Math.cos(wall.clock*.25)*W*.9,y:H/2+Math.sin(wall.clock*.25)*H*1.2};
+  const light=sceneLight(W,H,wall.ptr,wall.clock);
   wall.cells=order;
   order.forEach((i,p)=>{
     const x=(p%cols)*cell+cell/2,y=Math.floor(p/cols)*cell+cell/2,tm=tms[i];
     const dim=(wall.filter&&wallKindOf(tm)!==wall.filter)||(filtered&&!matches(i,f));
-    c.globalAlpha=dim?.14:1;
+    c.globalAlpha=dim?.14:ageAlpha(i);
     drawDataSide(c,x,y,k,tm,light);
     if(nowPlaying&&nowPlaying.index===i){c.globalAlpha=1;c.strokeStyle='#ff4a50';c.lineWidth=2;c.beginPath();c.arc(x,y,60*k+3,0,Math.PI*2);c.stroke()}
     if(wall.hover===i){c.globalAlpha=1;c.strokeStyle='#ffffff';c.lineWidth=1.5;c.beginPath();c.arc(x,y,60*k+3,0,Math.PI*2);c.stroke()}

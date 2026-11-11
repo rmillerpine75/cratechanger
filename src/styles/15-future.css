@@ -1,0 +1,37 @@
+
+/* ── ONE SURFACE: deep zoom, ask, immersive ─────────────────── */
+.deep-view{position:relative;background:#050507;color:#e0ddd8;border:1px solid #1e1e26;overflow:hidden}
+.deep-canvas{display:block;width:100%;height:min(78vh,900px);min-height:420px;cursor:grab;touch-action:none;outline:none}
+.deep-canvas:active{cursor:grabbing}
+.deep-canvas:focus-visible{box-shadow:inset 0 0 0 2px var(--accent2)}
+.deep-hud{position:absolute;left:14px;top:12px;right:14px;display:flex;flex-direction:column;gap:3px;pointer-events:none;text-shadow:0 1px 4px #000,0 0 12px #000}
+.deep-hud b{font-family:'Bebas Neue',sans-serif;font-weight:400;font-size:1.5rem;letter-spacing:1.5px;line-height:1.05}
+.deep-hud b,.deep-hud span,.deep-hud em{align-self:flex-start;background:rgba(5,5,7,.6);padding:1px 6px;margin-left:-6px}
+.deep-hud span{font-family:'Share Tech Mono',monospace;font-size:.7rem;letter-spacing:1.2px;color:#ffd6d7}
+.deep-hud span:empty{display:none}
+.deep-hud em{font-style:normal;font-family:'Share Tech Mono',monospace;font-size:.6rem;letter-spacing:1px;color:#b8b5bd;max-width:720px;line-height:1.5}
+.deep-scale{position:absolute;left:14px;bottom:14px;display:flex;flex-direction:column;gap:4px;pointer-events:none;font-family:'Share Tech Mono',monospace;font-size:.62rem;letter-spacing:1.5px;color:#e0ddd8;text-shadow:0 1px 3px #000}
+.deep-scale i{display:block;height:6px;border:1px solid #e0ddd8;border-top:0;min-width:8px}
+.deep-actions{position:absolute;right:12px;bottom:12px;display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px;max-width:calc(100% - 150px)}
+.deep-actions .btn,.wall-bar .btn{min-height:40px;min-width:40px;background:rgba(17,17,20,.9);border-color:#2a2a35;color:#e0ddd8}
+.deep-actions .btn.active,.wall-bar .btn.active{border-color:var(--accent);color:#fff}
+#deepOpenBtn{background:var(--accent);border-color:var(--accent);color:#fff}
+
+/* ask by voice: the mic lives inside the search box */
+.search-mic{position:absolute;right:30px;top:50%;transform:translateY(-50%);width:32px;height:32px;background:none;border:0;color:var(--muted);cursor:pointer;font-size:.95rem;line-height:1}
+.search-mic:hover{color:var(--text)}
+.search-mic.on{color:var(--accent2);animation:askPulse 1s ease-in-out infinite}
+@keyframes askPulse{50%{transform:translateY(-50%) scale(1.25)}}
+body.has-voice .search-wrap input{padding-right:66px}
+
+/* immersive: only the view; one small way back */
+body.immersive header,body.immersive .toolbar{display:none}
+.immersive-exit{position:fixed;top:10px;right:10px;z-index:950;min-height:40px;padding:0 12px;background:rgba(17,17,20,.88);border:1px solid #3a3a46;color:#e0ddd8;font-family:'Share Tech Mono',monospace;font-size:.6rem;letter-spacing:1.5px;cursor:pointer;opacity:.55;transition:opacity .2s}
+.immersive-exit:hover,.immersive-exit:focus-visible{opacity:1}
+body.immersive .deep-canvas{height:calc(100vh - 60px)}
+@media (max-width:760px){
+  .deep-canvas{height:54vh;min-height:320px}
+  .deep-hud b{font-size:1.15rem}
+  .deep-actions{max-width:calc(100% - 110px)}
+}
+@media (prefers-reduced-motion:reduce){.search-mic.on{animation:none}}
