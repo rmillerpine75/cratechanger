@@ -2117,6 +2117,55 @@
       openRoom(); await wait(50);
       ok('AUTO refuses without a token', (await setIdentifyAuto(true)) === false && !ident.auto && !listen.on);
       closeSettings(); closeRoom();
+      // ── FOLLOW YOUR PLAYER (ListenBrainz) ──
+      {
+        const keepGet = lbGet, n0 = discs.length, snapDiscs = JSON.stringify(discs);
+        let lbNow = [], lbRecent = [], lbCalls = 0, lbFail = null;
+        lbGet = async url => { lbCalls++; if (lbFail) throw new Error(lbFail); return { payload: { listens: /playing-now$/.test(url) ? lbNow : lbRecent } }; };
+        const L = (artist, album, title, extra) => ({ track_metadata: { artist_name: artist, release_name: album, track_name: title, additional_info: Object.assign({ media_player: 'MusicBee', duration_ms: 200000 }, extra || {}) } });
+        const inf = lbInfo({ track_metadata: { track_name: 'Shout', additional_info: { duration: 390, origin_url: 'https://open.spotify.com/track/abc' }, mbid_mapping: { artists: [{ artist_credit_name: 'Tears for Fears', join_phrase: '' }], release_name: 'Songs From the Big Chair', caa_release_mbid: 'f1418001-7f1e-46af-bfdb-95faeded8841', caa_id: 12345 } } });
+        ok('a ListenBrainz listen is read into the same shape as an identification', inf.artist === 'Tears for Fears' && inf.album === 'Songs From the Big Chair' && inf.title === 'Shout' && inf.durationMs === 390000 && inf.art === 'https://coverartarchive.org/release/f1418001-7f1e-46af-bfdb-95faeded8841/12345-500.jpg' && inf.links.spotify === 'https://open.spotify.com/track/abc');
+        ok('untrusted fields cannot inject a cover URL or link', lbInfo({ track_metadata: { additional_info: { origin_url: 'javascript:alert(1)' }, mbid_mapping: { caa_release_mbid: '../../x', caa_id: '1/../2' } } }).art === '' && lbInfo({ track_metadata: { additional_info: { origin_url: 'javascript:alert(1)' } } }).links.spotify === '');
+        try { localStorage.removeItem(LB_KEY); } catch (e) {}
+        openRoom(); await wait(50);
+        ok('♫ PLAYER refuses without a username and opens Settings', setPlayerFollow(true) === false && !lbState.on && $('settingsModal').classList.contains('open'));
+        $('lbUser').value = 'djeve'; saveLbUser(); closeSettings();
+        ok('the username is saved in this browser', lbUser() === 'djeve' && /FOLLOWING DJEVE/.test($('lbStatus').textContent));
+        lbNow = [L('Tears For Fears', 'Songs From The Big Chair', 'Shout')];
+        ok('♫ PLAYER turns on', setPlayerFollow(true) === true && lbState.on && $('roomLbBtn').textContent === '♫ PLAYER: ON' && lbCfg().follow === true, lbState.on + ' [' + $('roomLbBtn').textContent + '] ' + JSON.stringify(lbCfg()));
+        await wait(700);
+        ok('music that is not one of your CDs is shown in the room', roomIndex === null && /NOT IN YOUR CHANGER/.test($('roomLabel').textContent) && $('roomArtist').textContent === 'Tears For Fears' && $('roomAlbum').textContent === 'Songs From The Big Chair' && /MUSICBEE · NOT IN YOUR CHANGER/.test($('roomIdStatus').textContent), $('roomIdStatus').textContent);
+        ok('...and nothing is added to the collection', discs.length === n0 && JSON.stringify(discs) === snapDiscs);
+        const shownBefore = $('roomTracks').innerHTML, c0 = lbCalls;
+        const same = await lbTick();
+        ok('asking again while the same song plays changes nothing', same === null && lbCalls === c0 + 1 && $('roomTracks').innerHTML === shownBefore);
+        lbNow = [L('Tears For Fears', 'Songs From The Big Chair', 'Head Over Heels')];
+        const nextSong = await lbTick();
+        ok('next song on the same album: only the song line moves', !!nextSong && nextSong.same === true && $('roomSong').textContent === '♪ Head Over Heels' && $('roomAlbum').textContent === 'Songs From The Big Chair');
+        lbNow = [L(discs[2][0], discs[2][1], 'Some Song')];
+        const owned = await lbTick(); await wait(100);
+        ok('one of your CDs: the room switches to that disc and marks it now playing', !!owned && owned.slot === 2 && roomIndex === 2 && nowPlaying && nowPlaying.index === 2 && /IN YOUR CHANGER · SLOT 003/.test($('roomIdStatus').textContent), $('roomIdStatus').textContent);
+        lbNow = []; lbRecent = [Object.assign(L('Tears For Fears', 'Songs From The Big Chair', 'Shout'), { listened_at: Math.floor(Date.now() / 1000) - 120 })];
+        const recent = await lbTick(); await wait(300);
+        ok('players that only report finished songs: the last one counts if it is recent', !!recent && recent.slot === -1 && /\(LAST PLAYED\)/.test($('roomIdStatus').textContent), $('roomIdStatus').textContent);
+        lbRecent = [Object.assign(L('Old', 'Old', 'Old'), { listened_at: Math.floor(Date.now() / 1000) - 3600 })];
+        await lbTick();
+        ok('nothing playing is said plainly', /NOTHING PLAYING/.test($('roomIdStatus').textContent) && $('roomAlbum').textContent === 'Songs From The Big Chair');
+        lbFail = 'ListenBrainz answered 500'; lbState.lastKey = ''; await lbTick();
+        ok('a ListenBrainz hiccup is reported and it keeps trying', /LISTENBRAINZ ANSWERED 500/.test($('roomIdStatus').textContent) && lbState.on, lbState.on + ' ' + $('roomIdStatus').textContent);
+        lbFail = 'no such ListenBrainz user'; await lbTick();
+        ok('a wrong username stops it', !lbState.on && /NO SUCH LISTENBRAINZ USER/.test($('roomIdStatus').textContent) && $('roomLbBtn').textContent === '♫ PLAYER: OFF');
+        lbFail = null; lbNow = [L('Tears For Fears', 'Songs From The Big Chair', 'Shout')];
+        closeRoom(); await wait(50); openRoom(); await wait(300);
+        ok('the room remembers ♫ PLAYER was on and resumes it', lbState.on && lbState.timer !== 0, lbState.on + ' ' + lbState.timer + ' ' + JSON.stringify(lbCfg()) + ' open=' + $('roomModal').classList.contains('open'));
+        closeRoom(); await wait(50);
+        ok('closing the room stops asking, but keeps the preference', !lbState.on && lbState.timer === 0 && lbCfg().follow === true);
+        whatsPlaying(); await wait(300);
+        ok('LISTEN ▸ WHAT\'S PLAYING? opens the room and follows the player in one step', $('roomModal').classList.contains('open') && lbState.on && /WHAT'S PLAYING/.test($('secListen').textContent));
+        setPlayerFollow(false);
+        ok('turning it off is remembered too', !lbState.on && lbCfg().follow === false);
+        closeRoom(); lbGet = keepGet; try { localStorage.removeItem(LB_KEY); } catch (e) {} renderLbStatus();
+      }
       window.fetch = base9; ID_CLIP_MS = 8000;
       await resetAll9();
     }

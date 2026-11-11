@@ -472,7 +472,7 @@ function openSettings(){
   const h=webhookCfg();
   $('hookUrl').value=h.url;$('hookMark').checked=h.markPlaying;
   $('hookOrigin').textContent=location.origin&&location.origin!=='null'?location.origin:'https://rmillerpine75.github.io';
-  renderSyncStatus();renderAuddStatus();
+  renderSyncStatus();renderAuddStatus();if(typeof renderLbStatus==='function')renderLbStatus();
   $('settingsModal').classList.add('open');
 }
 function closeSettings(){$('settingsModal').classList.remove('open')}

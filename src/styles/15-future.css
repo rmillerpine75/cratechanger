@@ -35,3 +35,6 @@ body.immersive .deep-canvas{height:calc(100vh - 60px)}
   .deep-actions{max-width:calc(100% - 110px)}
 }
 @media (prefers-reduced-motion:reduce){.search-mic.on{animation:none}}
+
+/* follow your player */
+#roomLbBtn.on{border-color:var(--green);color:var(--green)}

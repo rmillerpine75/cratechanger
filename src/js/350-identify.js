@@ -154,8 +154,10 @@ async function renderRoomExternal(info){
     showRoomArt(info.art);
   }
 }
-async function showIdentified(res){
-  const info=auddInfo(res);ident.last=info;
+async function showIdentified(res){return showIdentifiedInfo(auddInfo(res),'🔎 IDENTIFIED')}
+// shared by every source that can name what is playing (AudD from the microphone, ListenBrainz from your player)
+async function showIdentifiedInfo(info,tag){
+  ident.last=info;
   const slot=findOwnedMatch(info);
   if(slot>=0){
     ident.external=null;
@@ -169,11 +171,11 @@ async function showIdentified(res){
     $('roomSong').textContent='♪ '+info.title;$('roomSong').style.display=info.title?'':'none';
     renderRoomLinks(info);
     highlightPlayingTrack(info.title);
-    setIdStatus(`🔎 IDENTIFIED · IN YOUR CHANGER · SLOT ${slotNum(slot)} — MARKED NOW PLAYING`);
+    setIdStatus(`${tag} · IN YOUR CHANGER · SLOT ${slotNum(slot)} — MARKED NOW PLAYING`);
     return {slot,info};
   }
   await renderRoomExternal(info);
-  setIdStatus('🔎 IDENTIFIED · NOT IN YOUR CHANGER');
+  setIdStatus(tag+' · NOT IN YOUR CHANGER');
   return {slot:-1,info};
 }
 async function identifyNow(fromAuto){
